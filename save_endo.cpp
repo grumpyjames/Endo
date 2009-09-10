@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 using std::string;
 using std::ifstream;
 namespace {
@@ -69,10 +70,11 @@ unsigned int inty_nat(string & dna, string & rescue)
   }
 }
 
-char nat(string & dna, string & rescue) //wraps real inty nat function
+string nat(string & dna, string & rescue) //wraps real inty nat function
 {
-  const char zero('0');
-  return inty_nat(dna, rescue) + zero;
+  std::stringstream out; //FIXME build/include boost and use lexical_cast?
+  out << inty_nat(dna, rescue);
+  return out.str();
 }
 
 string consts(string & dna, string & rescuable)
@@ -124,12 +126,12 @@ string make_template(string & dna, string & rna)
       default:
 	{
 	  if (second=='F' || second=='P') {
-	    char l = nat(dna, rescuable);
-	    char n = nat(dna, rescuable);
+	    string l = nat(dna, rescuable);
+	    string n = nat(dna, rescuable);
 	    result_pattern.push_back('[');
-	    result_pattern.push_back(n);
+	    result_pattern.append(n);
 	    result_pattern.push_back('_');
-	    result_pattern.push_back(l);
+	    result_pattern.append(l);
 	    result_pattern.push_back(']');
 	  }
 	  else { //char=='I'
@@ -142,9 +144,9 @@ string make_template(string & dna, string & rna)
 	      break;
 	    case 'P':
 	      {
-		char n = nat(dna, rescuable);
+		string n = nat(dna, rescuable);
 		result_pattern.push_back('|');
-		result_pattern.push_back(n);
+		result_pattern.append(n);
 		result_pattern.push_back('|');
 	      }
 	      break;
@@ -195,9 +197,9 @@ string pattern(string & dna, string & rna) //evil, but I'm lazy...
 	  break;
       case 'P':
 	{
-	  char n = nat(dna, rescuable);
+	  string n = nat(dna, rescuable);
 	  result_pattern.push_back('!');
-	  result_pattern.push_back(n); //we don't want to add ! if finish exception is thrown.
+	  result_pattern.append(n); //we don't want to add ! if finish exception is thrown.
 	  break;
 	}
       case 'I':
@@ -253,41 +255,6 @@ string pattern(string & dna, string & rna) //evil, but I'm lazy...
 
  */
 
-void template_default_function(char to_match, string & dna, string & rna, string & rescuable, string & result_pattern)
-{
-  if (to_match=='F' || to_match=='P') {
-    char l = nat(dna, rescuable);
-    char n = nat(dna, rescuable);
-    result_pattern.push_back('[');
-    result_pattern.push_back(n);
-    result_pattern.push_back('_');
-    result_pattern.push_back(l);
-    result_pattern.push_back(']');
-  }
-  else { //char=='I'
-    char third = pop_first(dna, rescuable);
-    switch (third) {
-    case 'I':
-      {
-	push_dna_to_rna(dna, rna);
-      }
-      break;
-    case 'P':
-      {
-	char n = nat(dna, rescuable);
-	result_pattern.push_back('|');
-	result_pattern.push_back(n);
-	result_pattern.push_back('|');
-      }
-      break;
-    default: //C or F
-      rescuable = ""; //stop last three eaten characters being readded by the catcher
-      throw finish_exception("Cheating exception to stop us having to pass finished around");
-      break;
-    }
-  }
-}
-
 int main(int argc, char* argv[])
 {
   string moo("moo"), whatever("");
@@ -330,6 +297,7 @@ int main(int argc, char* argv[])
       std::cout << "pattern: " << pattern_holder << '\n';
       template_holder = make_template(actual_dna, actual_rna);
       std::cout << "template: " << template_holder << '\n';
+      std::cout << "rna length: " << actual_rna.length() << '\n';
     }
   }
   catch (finish_exception & fe)
