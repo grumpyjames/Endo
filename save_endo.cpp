@@ -1,9 +1,9 @@
 #include <string>
 #include <assert.h>
 #include <iostream>
-
+#include <fstream>
 using std::string;
-
+using std::ifstream;
 namespace {
 
   class finish_exception {
@@ -99,29 +99,65 @@ string consts(string & dna, string & rescuable)
   throw "compiler being silly";
 }
 
-void single_base_match(char to_match, string & dna, string & rna, string & rescuable, string & result_pattern, void (* default_function)(char, string &, string &, string &, string &))
+string make_template(string & dna, string & rna)
 {
-  switch (to_match) {
-  case 'C':
-    result_pattern.push_back('I');
-    break;
-  case 'F':
-    result_pattern.push_back('C');
-    break;
-  case 'P':
-    result_pattern.push_back('F');
-    break;
-  case 'I':
-    char second = pop_first(dna, rescuable);
-    switch (second) {
+  string result_pattern;
+  string rescuable;
+  while (dna.length()>0) {
+    char first = pop_first(dna, rescuable);
+    switch (first) {
     case 'C':
-      result_pattern.push_back('P');
+      result_pattern.push_back('I');
       break;
-    default:
-      default_function(second, dna, rna, rescuable, result_pattern);
+    case 'F':
+      result_pattern.push_back('C');
       break;
+    case 'P':
+      result_pattern.push_back('F');
+      break;
+    case 'I':
+      char second = pop_first(dna, rescuable);
+      switch (second) {
+      case 'C':
+	result_pattern.push_back('P');
+	break;
+      default:
+	{
+	  if (second=='F' || second=='P') {
+	    char l = nat(dna, rescuable);
+	    char n = nat(dna, rescuable);
+	    result_pattern.push_back('[');
+	    result_pattern.push_back(n);
+	    result_pattern.push_back('_');
+	    result_pattern.push_back(l);
+	    result_pattern.push_back(']');
+	  }
+	  else { //char=='I'
+	    char third = pop_first(dna, rescuable);
+	    switch (third) {
+	    case 'I':
+	      {
+		push_dna_to_rna(dna, rna);
+	      }
+	      break;
+	    case 'P':
+	      {
+		char n = nat(dna, rescuable);
+		result_pattern.push_back('|');
+		result_pattern.push_back(n);
+		result_pattern.push_back('|');
+	      }
+	      break;
+	    default: //C or F
+	      return result_pattern;
+	    }
+	  }
+	  break;
+	}
+      }
     }
   }
+  throw finish_exception("ran out of dna!");
 }
 
 string pattern(string & dna, string & rna) //evil, but I'm lazy...
@@ -252,26 +288,6 @@ void template_default_function(char to_match, string & dna, string & rna, string
   }
 }
 
-
-string make_template(string & dna, string & rna)
-{
-  string result_pattern(""),rescuable("");
-  bool finished(false);
-  while (!finished) {
-    try {
-      rescuable = "";
-      char first = pop_first(dna, rescuable);
-      single_base_match(first, dna, rna, rescuable, result_pattern, &template_default_function);
-    }
-    catch (finish_exception &) {
-      finished = true;
-      dna.append(rescuable);
-    }
-  }
-  return "moooo";
-}
-
-
 int main(int argc, char* argv[])
 {
   string moo("moo"), whatever("");
@@ -300,4 +316,24 @@ int main(int argc, char* argv[])
   string our_pattern = pattern(dna,rna);
   assert ("(!2)P"==our_pattern);
 
+  //now do the real thing:
+  ifstream ifs( "endo.dna" );
+  string actual_dna;
+  string actual_rna("");
+
+  getline( ifs, actual_dna );
+  std::cout << "Hey, I read in the dna, and the first few bases were: " << actual_dna.substr(0,100) << '\n';
+  string pattern_holder(""),template_holder(""); 
+  try {
+    for (;;){
+      pattern_holder = pattern(actual_dna, actual_rna);
+      std::cout << "pattern: " << pattern_holder << '\n';
+      template_holder = make_template(actual_dna, actual_rna);
+      std::cout << "template: " << template_holder << '\n';
+    }
+  }
+  catch (finish_exception & fe)
+    {
+      //meh
+    }
 }
