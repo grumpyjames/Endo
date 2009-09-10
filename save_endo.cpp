@@ -131,70 +131,64 @@ string pattern(string & dna, string & rna) //evil, but I'm lazy...
   unsigned int level(0);
 
   while (!finished) {
-    try {
-      rescuable="";
-      char first = pop_first(dna, rescuable);
-      switch (first) {
+    rescuable="";
+    char first = pop_first(dna, rescuable);
+    switch (first) {
+    case 'C':
+      result_pattern.push_back('I');
+      break;
+    case 'F':
+      result_pattern.push_back('C');
+      break;
+    case 'P':
+      result_pattern.push_back('F');
+      break;
+    case 'I':
+      char second = pop_first(dna, rescuable);
+      switch (second) {
       case 'C':
-	result_pattern.push_back('I');
+	result_pattern.push_back('P');
 	break;
       case 'F':
-	result_pattern.push_back('C');
-	break;
-      case 'P':
-	result_pattern.push_back('F');
-	break;
-      case 'I':
-	char second = pop_first(dna, rescuable);
-	switch (second) {
-	case 'C':
-	  result_pattern.push_back('P');
-	  break;
-	case 'F':
-	  {
-	    pop_first(dna, rescuable);
-	    string s = consts(dna, rescuable);
-	    result_pattern.push_back('?');
-	    result_pattern.append(s);
-	  }
-	  break;
-	case 'P':
-	  {
-	    char n = nat(dna, rescuable);
-	    result_pattern.push_back('!');
-	    result_pattern.push_back(n); //we don't want to add ! if finish exception is thrown.
-	    break;
-	  }
-	case 'I':
-	  char third = pop_first(dna, rescuable);
-	  switch (third) {
-	  case 'P':
-	    ++level;
-	    result_pattern.push_back('(');
-	    break;
-	  case 'I':
-	    push_dna_to_rna(dna, rna);
-	    break;
-	  default: //C or F yield the same
-	    if (level > 0) {
-	      --level;
-	      result_pattern.push_back(')');
-	    }
-	    else {
-	      finished = true;
-	    }
-	    break;
-	  }
+	{
+	  pop_first(dna, rescuable);
+	  string s = consts(dna, rescuable);
+	  result_pattern.push_back('?');
+	  result_pattern.append(s);
 	}
-	break;
+	  break;
+      case 'P':
+	{
+	  char n = nat(dna, rescuable);
+	  result_pattern.push_back('!');
+	  result_pattern.push_back(n); //we don't want to add ! if finish exception is thrown.
+	  break;
+	}
+      case 'I':
+	char third = pop_first(dna, rescuable);
+	switch (third) {
+	case 'P':
+	  ++level;
+	  result_pattern.push_back('(');
+	  break;
+	case 'I':
+	  push_dna_to_rna(dna, rna);
+	  break;
+	default: //C or F yield the same
+	  if (level > 0) {
+	    --level;
+	    result_pattern.push_back(')');
+	  }
+	  else {
+	    return result_pattern;
+	  }
+	  break;
+	}
       }
-    }
-    catch (finish_exception &) {
-      finished = true;
-      dna.append(rescuable);
+      break;
     }
   }
-  return result_pattern;
+  throw "compiler is silly";
 }
 
 /*
