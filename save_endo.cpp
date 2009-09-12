@@ -42,6 +42,19 @@ void push_dna_to_rna(string & dna, string & rna)
   }
 }
 
+void cpush_dna_to_rna(char *& dna, string & rna)
+{
+  if (strlen(dna) > 6) {
+    for (size_t st=0; st<7; ++st) {
+      rna.push_back(dna[0]);
+      ++dna;
+    }
+  }
+  else {
+    throw finish_exception("Not enough DNA to make RNA");
+  }
+}
+
 char pop_first(string & dna, string & rescue) {
   if (dna.length() < 1) {
     throw finish_exception("Not enough dna left to do anything");
@@ -70,10 +83,37 @@ unsigned int inty_nat(string & dna, string & rescue)
   }
 }
 
+unsigned int cinty_nat(char * & dna, string & rescue)
+{
+  if (strlen(dna) < 1) {
+    throw finish_exception("dna not long enough to nat");
+  }
+  char first = dna[0];
+  ++dna;
+  switch (first) {
+  case 'P':
+    return 0;
+    break;
+  case 'C':
+    return (2 * cinty_nat(dna, rescue)) + 1;
+    break;
+  default: // I and F have the same result
+    return (2 * cinty_nat(dna, rescue));
+    break;
+  }
+}
+
 string nat(string & dna, string & rescue) //wraps real inty nat function
 {
   std::stringstream out; //FIXME build/include boost and use lexical_cast?
   out << inty_nat(dna, rescue);
+  return out.str();
+}
+
+string cnat(char * & dna, string & rescue)
+{
+  std::stringstream out; //FIXME build/include boost and use lexical_cast?
+  out << cinty_nat(dna, rescue);
   return out.str();
 }
 
@@ -99,6 +139,33 @@ string consts(string & dna, string & rescuable)
     break;
   }
   throw "compiler being silly";
+}
+
+string cconsts(char *& dna, string & rescuable)
+{
+  char first = dna[0];
+  ++dna;
+  switch (first) {
+  case 'C':
+    return "I" + cconsts(dna, rescuable);
+    break;
+  case 'F':
+    return "C" + cconsts(dna, rescuable);
+    break;
+  case 'P':
+    return "F" + cconsts(dna, rescuable);
+    break;
+  case 'I':
+    char second = dna[0];
+    ++dna;
+    if (second=='C')
+      return "P" + cconsts(dna, rescuable);
+    else 
+      return "";//throw finish_exception("not enough dna to complete consts");
+    break;
+  }
+  throw "compiler being silly";
+
 }
 
 string make_template(string & dna, string & rna)
@@ -162,7 +229,7 @@ string make_template(string & dna, string & rna)
   throw finish_exception("ran out of dna!");
 }
 
-string pattern(string & dna, string & rna) //evil, but I'm lazy...
+string pattern(char *& dna, string & rna) //evil, but I'm lazy...
 {
   string result_pattern(""), rescuable("");
   bool finished(false);
@@ -170,7 +237,8 @@ string pattern(string & dna, string & rna) //evil, but I'm lazy...
 
   while (!finished) {
     rescuable="";
-    char first = pop_first(dna, rescuable);
+    char first = dna[0];
+    ++dna;
     switch (first) {
     case 'C':
       result_pattern.push_back('I');
@@ -182,35 +250,37 @@ string pattern(string & dna, string & rna) //evil, but I'm lazy...
       result_pattern.push_back('F');
       break;
     case 'I':
-      char second = pop_first(dna, rescuable);
+      char second = dna[0];
+      ++dna;
       switch (second) {
       case 'C':
 	result_pattern.push_back('P');
 	break;
       case 'F':
 	{
-	  pop_first(dna, rescuable);
-	  string s = consts(dna, rescuable);
+	  ++dna;
+	  string s = cconsts(dna, rescuable);
 	  result_pattern.push_back('?');
 	  result_pattern.append(s);
 	}
 	  break;
       case 'P':
 	{
-	  string n = nat(dna, rescuable);
+	  string n = cnat(dna, rescuable);
 	  result_pattern.push_back('!');
 	  result_pattern.append(n); //we don't want to add ! if finish exception is thrown.
-	  break;
 	}
+	break;
       case 'I':
-	char third = pop_first(dna, rescuable);
+	char third = dna[0];
+	++dna;
 	switch (third) {
 	case 'P':
 	  ++level;
 	  result_pattern.push_back('(');
 	  break;
 	case 'I':
-	  push_dna_to_rna(dna, rna);
+	  cpush_dna_to_rna(dna, rna);
 	  break;
 	default: //C or F yield the same
 	  if (level > 0) {
@@ -257,13 +327,7 @@ string pattern(string & dna, string & rna) //evil, but I'm lazy...
 
 int main(int argc, char* argv[])
 {
-  string moo("moo"), whatever("");
-  shift_dna_left(moo,1,whatever);
-  assert(moo == "oo");
-  shift_dna_left(moo,2,whatever);
-  assert(moo == "");
-  assert(whatever == "moo");
-
+ 
   string pomegranate("pomegranate");
   string not_really_rna("");
 
@@ -271,16 +335,16 @@ int main(int argc, char* argv[])
   assert(pomegranate=="nate");
   assert(not_really_rna=="pomegra");
 
-  string dna("CIIC");
+  char * dna = "CIIC";
   string rna("");
   
   assert("I"==pattern(dna, rna));
   assert("" == rna);
-  assert("" == dna);
 
-  dna = "IIPIPICPIICICIIF";
+  char * cdna = "IIPIPICPIICICIIF";
   rna = "";
-  string our_pattern = pattern(dna,rna);
+  string our_pattern = pattern(cdna,rna);
+  std::cout << our_pattern << '\n';
   assert ("(!2)P"==our_pattern);
 
   //now do the real thing:
@@ -291,10 +355,12 @@ int main(int argc, char* argv[])
   getline( ifs, actual_dna );
   std::cout << "Hey, I read in the dna, and the first few bases were: " << actual_dna.substr(0,100) << '\n';
   string pattern_holder(""),template_holder(""); 
+  char * primitive_dna = const_cast<char *>(actual_dna.c_str());
   try {
     for (;;){
-      pattern_holder = pattern(actual_dna, actual_rna);
+      pattern_holder = pattern(primitive_dna, actual_rna);
       std::cout << "pattern: " << pattern_holder << '\n';
+      std::cout << "pattern length was " << pattern_holder.length() << '\n';
       template_holder = make_template(actual_dna, actual_rna);
       std::cout << "template: " << template_holder << '\n';
       std::cout << "rna length: " << actual_rna.length() << '\n';
@@ -302,6 +368,6 @@ int main(int argc, char* argv[])
   }
   catch (finish_exception & fe)
     {
-      //meh
+      std::cout << "caught finished exc "<< fe.why() << '\n';
     }
 }
