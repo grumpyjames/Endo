@@ -47,17 +47,13 @@ void push_dna_to_rna(string & dna, string & rna)
   }
 }
 
+char * buffer = new char[7];
+
 void cpush_dna_to_rna(char *& dna, string & rna)
 {
-  if (strlen(dna) > 6) {
-    for (size_t st=0; st<7; ++st) {
-      rna.push_back(dna[0]);
-      ++dna;
-    }
-  }
-  else {
-    throw finish_exception("Not enough DNA to make RNA");
-  }
+  //FIXME - this may not have enough chars to execute!
+  rna.append(dna, 7);
+  dna+=7;
 }
 
 char pop_first(string & dna, string & rescue) {
@@ -240,7 +236,9 @@ string cmake_template(char *& dna, string & rna)
 {
   string result_pattern;
   string rescuable;
-  while (strlen(dna)>0) {
+  rna.reserve(strlen(dna));
+  //FIXME suspect calls to strlen will hurt a LOT.
+  while (true) { //strlen(dna)>0) { commented for memory
     char first = dna[0];
     ++dna;
     switch (first) {
@@ -304,8 +302,8 @@ string pattern(char *& dna, string & rna) //evil, but I'm lazy...
 {
   string result_pattern(""), rescuable("");
   bool finished(false);
-  unsigned int level(0);
-
+  unsigned int level(0); 
+  rna.reserve(strlen(dna));
   while (!finished) {
     rescuable="";
     char first = dna[0];
@@ -531,7 +529,7 @@ void match_replace(char *& dna, string pattern, string a_template)
 	unsigned int moo = c.front();
 	building.reserve(i-moo);
 	//std::cout << "DNA length: " << strlen(dna) << ". Copying " << (i - moo) << " chars to building from position " << c.front() << '\n';
-	for (; moo<=i; ++moo) {
+	for (; moo<i; ++moo) {
 	  //std::cout << dna[moo] << '\n';
 	  building.push_back(dna[moo]);
 	}
@@ -554,8 +552,8 @@ void match_replace(char *& dna, string pattern, string a_template)
   }
   std::cout << "successful match: i= " << i << '\n'; 
   dna+=i;
-  std::cout << "env[0] length is " << env[0].length() << '\n';
-  std::cout << "env[1] length is " << env[1].length() << '\n';
+  std::cout << "env[0] length is " << env[0].length() << " and starts with " << env[0].substr(0,10) << '\n';
+  std::cout << "env[1] length is " << env[1].length() << " and starts with " << env[0].substr(0,10) << '\n';
   replace(dna, a_template, env);
 }
 
@@ -586,21 +584,32 @@ int main(int argc, char* argv[])
   string actual_dna;
   string actual_rna("");
 
+  std::cout << "max string size is " << actual_rna.max_size() << '\n';
+
   getline( ifs, actual_dna );
   std::cout << "Hey, I read in the dna, and the first few bases were: " << actual_dna.substr(0,100) << '\n';
   string pattern_holder(""),template_holder(""); 
   char * primitive_dna = const_cast<char *>(actual_dna.c_str());
   try {
+    time_t begin,end;
+    begin = time(NULL);
     pattern_holder = pattern(primitive_dna, actual_rna);
     std::cout << "pattern: " << pattern_holder << '\n';
     std::cout << "pattern length was " << pattern_holder.length() << '\n';
+    end = time(NULL);
+    std::cout << "Pattern execution took " << end - begin << " seconds" << '\n';
+    std::cout << "rna length: " << actual_rna.length() << '\n';
+    begin = end;
     template_holder = cmake_template(primitive_dna, actual_rna);
     std::cout << "template: " << template_holder << '\n';
     std::cout << "rna length: " << actual_rna.length() << '\n';
+    end = time(NULL);
+    std::cout << "Template execution took " << end - begin << " seconds" << '\n';
     match_replace(primitive_dna, pattern_holder, template_holder);
   }
   catch (finish_exception & fe)
     {
       std::cout << "caught finished exc "<< fe.why() << '\n';
     }
+  exit(0);
 }
