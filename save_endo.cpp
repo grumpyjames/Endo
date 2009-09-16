@@ -529,10 +529,7 @@ void match_replace(char *& dna, string pattern, string a_template)
 	unsigned int moo = c.front();
 	building.reserve(i-moo);
 	//std::cout << "DNA length: " << strlen(dna) << ". Copying " << (i - moo) << " chars to building from position " << c.front() << '\n';
-	for (; moo<i; ++moo) {
-	  //std::cout << dna[moo] << '\n';
-	  building.push_back(dna[moo]);
-	}
+	building.append(dna, moo, i-moo); //push_back(dna[moo]);
 	//std::cout << "done it, building is now " << building << '\n';
 	env.push_back(building);
 	//std::cout << "Adding the building to the env" << '\n';
