@@ -6,6 +6,8 @@
 #include <cmath>
 #include <deque>
 #include <list>
+#include "time.h"
+
 using std::string;
 using std::ifstream;
 namespace {
@@ -86,25 +88,27 @@ unsigned int inty_nat(string & dna, string & rescue)
   }
 }
 
-unsigned int cinty_nat(char * & dna, string & rescue)
+//non recursive
+unsigned int nrcinty_nat(char *& dna, string & rescue)
 {
-  if (strlen(dna) < 1) {
-    throw finish_exception("dna not long enough to nat");
+  char * p_location = strchr(dna, 'P');
+  char * point_dna_to_me_at_the_end = (p_location + 1);
+  if (p_location==NULL) {
+    throw finish_exception("could not find nat terminator");
   }
-  char first = dna[0];
-  ++dna;
-  switch (first) {
-  case 'P':
-    return 0;
-    break;
-  case 'C':
-    return (2 * cinty_nat(dna, rescue)) + 1;
-    break;
-  default: // I and F have the same result
-    return (2 * cinty_nat(dna, rescue));
-    break;
+  //now we have a safe character pointer, and we should be allowed to decrement it back to dna
+  unsigned int to_return(0);
+  while(p_location != dna) {
+    --p_location;
+    if (p_location[0]=='C')
+      to_return = (2 * to_return) + 1;
+    else
+      to_return = (2 * to_return);
   }
+  dna = point_dna_to_me_at_the_end;
+  return to_return;
 }
+
 
 string nat(string & dna, string & rescue) //wraps real inty nat function
 {
@@ -116,7 +120,7 @@ string nat(string & dna, string & rescue) //wraps real inty nat function
 string cnat(char * & dna, string & rescue)
 {
   std::stringstream out; //FIXME build/include boost and use lexical_cast?
-  out << cinty_nat(dna, rescue);
+  out << nrcinty_nat(dna, rescue);
   return out.str();
 }
 
@@ -394,6 +398,7 @@ string pattern(char *& dna, string & rna) //evil, but I'm lazy...
 
  */
 
+//recursive call is ok - we're not allocating.
 void asnat(unsigned int k, std::string & to_write_to)
 {
   if (k==0) {
@@ -410,8 +415,10 @@ void asnat(unsigned int k, std::string & to_write_to)
   }
 }
 
+//FIXME This is inaccurate
 void protect(unsigned int level, string & bits, string & to_write_to)
 {
+  //std::cout << "bits is " << bits <<'\n';
   for (unsigned int i=0; i<=level; ++i) {
     switch (bits[i]) {
     case 'I':
@@ -436,22 +443,28 @@ void protect(unsigned int level, string & bits, string & to_write_to)
 void replace(char * dna, string & a_template, std::deque<string> & env)
 {
   string r("");
+  std::cout << "Replacing template has length " <<  a_template.length() << '\n';
   for (unsigned int i=0; i<a_template.length(); ++i) {
-    switch (a_template[0]) {
+    switch (a_template[i]) {
     case '[':
       {
-	++i;
-	size_t found = a_template.find(',', i) - 1;
+	++i; //we want to start the search at the next char
+	size_t found = a_template.find('_', i);
 	unsigned int n;
-	std::istringstream a_stream(a_template.substr(i, found-i+1));
+	std::cout << "finding template substring between chars " << i << " and " << (found) << '\n';
+	std::istringstream a_stream(a_template.substr(i, found-i));
 	a_stream >> n;
+	std::cout << "found n was " <<  n << '\n';
 	i = ++found;
-	found = a_template.find(']', i) - 1;
+	found = a_template.find(']', i);
 	unsigned int l;
-	std::istringstream b_stream(a_template.substr(i, found-i+1));
+	std::cout << "finding template substring between chars " << i << " and " << (found) << '\n';
+	std::istringstream b_stream(a_template.substr(i, found-i));
 	b_stream >> l;
+	std::cout << "found l was " <<  l << '\n';
 	i = found;
 	string to_append("");
+	std::cout << "about to do shit with protect" <<'\n';
 	protect(l, env[n], to_append);
 	r.append(to_append);
       }
@@ -470,7 +483,7 @@ void replace(char * dna, string & a_template, std::deque<string> & env)
       }
       break;
     default: //lone base
-      r.push_back(a_template[0]);
+      r.push_back(a_template[i]);
       break;
     }
   }
@@ -546,11 +559,8 @@ void match_replace(char *& dna, string pattern, string a_template)
   replace(dna, a_template, env);
 }
 
-
-
 int main(int argc, char* argv[])
 {
- 
   string pomegranate("pomegranate");
   string not_really_rna("");
 
@@ -565,6 +575,7 @@ int main(int argc, char* argv[])
   assert("" == rna);
 
   char * cdna = "IIPIPICPIICICIIF";
+  
   rna = "";
   string our_pattern = pattern(cdna,rna);
   std::cout << our_pattern << '\n';
