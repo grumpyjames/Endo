@@ -643,6 +643,7 @@ void match_replace(char *& dna, string pattern, string a_template)
 	//std::cout << "found nat: " << n << " end of nat " << end_of_nat << " s " << s << '\n';
 	s = end_of_nat;
 	i += atoi(n.c_str()); //evil, but probably quicker than streams: TEST!
+	//std::cout << "i is now " << i << '\n';
       }
       break;
     case '?':
@@ -658,7 +659,7 @@ void match_replace(char *& dna, string pattern, string a_template)
 	break;
       }
     case '(':
-      std::cout << i << " was pushed to the front of c" << '\n';
+      //std::cout << i << " was pushed to the front of c" << '\n';
       c.push_front(i);
       break;
     case ')':
@@ -668,13 +669,14 @@ void match_replace(char *& dna, string pattern, string a_template)
 	//std::cout << "Instantiating a string" << '\n';
 	unsigned int moo = c.front();
 	building.reserve(i-moo);
-	//std::cout << "DNA length: " << strlen(dna) << ". Copying " << (i - moo) << " chars to building from position " << c.front() << '\n';
-	building.append(dna, moo, i-moo); //push_back(dna[moo]);
+	//std::cout << "DNA length: " << strlen(dna) << ". Copying " << (i - moo) << " chars to building from position " << moo << '\n';
+	building.append(dna, moo, i-moo);
+	//std::cout << dna[moo] << " is the " << moo << "th dna character" << '\n';
 	//std::cout << "done it, building is now " << building << '\n';
 	env.push_back(building);
 	//std::cout << "Adding the building to the env" << '\n';
 	c.pop_front();
-	std::cout << c.front() << " is now the front of c" << '\n';
+	//std::cout << c.front() << " is now the front of c" << '\n';
 	//std::cout << "Removing the position from the list" << '\n';
 	break;
       }
@@ -691,32 +693,36 @@ void match_replace(char *& dna, string pattern, string a_template)
   std::cout << "successful match: i= " << i << '\n'; 
   dna+=i;
   std::cout << "env[0] length is " << env[0].length() << " and starts with " << env[0].substr(0,10) << '\n';
-  std::cout << "env[1] length is " << env[1].length() << " and starts with " << env[0].substr(0,10) << '\n';
+  std::cout << "env[1] length is " << env[1].length() << " and starts with " << env[1].substr(0,10) << '\n';
   replace(dna, a_template, env);
 }
 
-int main(int argc, char* argv[])
+void test()
 {
+
   string pomegranate("pomegranate");
   string not_really_rna("");
-
+  
   push_dna_to_rna(pomegranate, not_really_rna);
   assert(pomegranate=="nate");
   assert(not_really_rna=="pomegra");
-
+  
   char * dna = "CIIC";
   string rna("");
   
   assert("I"==pattern(dna, rna));
   assert("" == rna);
-
+  
   char * cdna = "IIPIPICPIICICIIF";
   
   rna = "";
   string our_pattern = pattern(cdna,rna);
-  std::cout << our_pattern << '\n';
   assert ("(!2/)P"==our_pattern);
+}
 
+int main(int argc, char* argv[])
+{
+  test();
   //now do the real thing:
   ifstream ifs( "endo.dna" );
   string actual_dna;
@@ -725,28 +731,10 @@ int main(int argc, char* argv[])
   std::cout << "max string size is " << actual_rna.max_size() << '\n';
 
   getline( ifs, actual_dna );
-  std::cout << "Hey, I read in the dna, and the first few bases were: " << actual_dna.substr(0,100) << '\n';
+  std::cout << "Hey, I read in the dna, and the first few bases were: " << actual_dna.substr(4526645,800) << '\n';
   string pattern_holder(""),template_holder(""); 
   char * primitive_dna = const_cast<char *>(actual_dna.c_str());
-  
-  time_t start, fin;
-  start = time(NULL);
-  for (unsigned int i(0); i<1000; ++i){
-    char * dna_copy = primitive_dna;
-    string meh_rna, meh_pattern;
-    meh_pattern = pattern(dna_copy, meh_rna);
-  }
-  fin = time(NULL);
-  std::cout << "Crappy pattern took " << fin - start << " seconds" << '\n';
-  start = time(NULL);
-  for (unsigned int i(0); i<1000; ++i){
-    char * dna_copy = primitive_dna;
-    string meh_rna;
-    dna_pattern result;
-    pattern(dna_copy, meh_rna, result);
-  }
-  fin  =time(NULL);
-  std::cout << "Decent pattern took " << fin - start << " seconds" << '\n';
+
   try {
     time_t begin,end;
     begin = time(NULL);
@@ -769,4 +757,25 @@ int main(int argc, char* argv[])
       std::cout << "caught finished exc "<< fe.why() << '\n';
     }
   exit(0);
+}
+
+void test_pattern(char * primitive_dna) {
+  time_t start, fin;
+  start = time(NULL);
+  for (unsigned int i(0); i<1000; ++i){
+    char * dna_copy = primitive_dna;
+    string meh_rna, meh_pattern;
+    meh_pattern = pattern(dna_copy, meh_rna);
+  }
+  fin = time(NULL);
+  std::cout << "Crappy pattern took " << fin - start << " seconds" << '\n';
+  start = time(NULL);
+  for (unsigned int i(0); i<1000; ++i){
+    char * dna_copy = primitive_dna;
+    string meh_rna;
+    dna_pattern result;
+    pattern(dna_copy, meh_rna, result);
+  }
+  fin=time(NULL);
+  std::cout << "Decent pattern took " << fin - start << " seconds" << '\n';
 }
