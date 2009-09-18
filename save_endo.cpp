@@ -10,6 +10,47 @@
 
 using std::string;
 using std::ifstream;
+
+class  pattern_piece {
+public:
+  enum pattern_piece_type {
+    SINGLE_BASE,
+    SKIP,
+    FIND
+  };
+  pattern_piece(unsigned int const skip_length) : type_(SKIP), skip_length_(skip_length){}
+  pattern_piece(char const base) : type_(SINGLE_BASE), base_(base){}
+  pattern_piece(string const & search_term) : type_(FIND), search_term_(search_term){} 
+  size_t const & type() { return type_; }
+  char const & base() { return base_; }
+  string const & search_term() { return search_term_; }
+private:
+  size_t const type_;
+  //FIXME make these optional?
+  char base_;
+  unsigned int skip_length_;
+  string search_term_;
+};
+
+typedef std::deque<pattern_piece> dna_pattern;
+
+class template_piece {
+public:
+  enum template_piece_type { SINGLE_BASE, N, N_L };
+  template_piece(unsigned int n) : type_(N), n_(n) {}
+  template_piece(unsigned int n, unsigned int l) : type_(N_L), n_(n), l_(l) {}
+  template_piece(char base) : type_(SINGLE_BASE), base_(base) {}
+  size_t const & type() { return type_;}
+  unsigned int & n() { return n_; }
+  unsigned int & l() { return l_; }
+private:
+  size_t const type_;
+  unsigned int n_, l_;
+  char base_;
+};
+
+typedef std::list<template_piece> dna_template;
+
 namespace {
 
   class finish_exception {
@@ -519,6 +560,7 @@ void match_replace(char *& dna, string pattern, string a_template)
 	break;
       }
     case '(':
+      std::cout << i << " was pushed to the front of c" << '\n';
       c.push_front(i);
       break;
     case ')':
@@ -534,6 +576,7 @@ void match_replace(char *& dna, string pattern, string a_template)
 	env.push_back(building);
 	//std::cout << "Adding the building to the env" << '\n';
 	c.pop_front();
+	std::cout << c.front() << " is now the front of c" << '\n';
 	//std::cout << "Removing the position from the list" << '\n';
 	break;
       }
