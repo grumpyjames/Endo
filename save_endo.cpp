@@ -16,21 +16,53 @@ public:
   enum pattern_piece_type {
     SINGLE_BASE,
     SKIP,
-    FIND
+    FIND,
+    BRACE_OPEN,
+    BRACE_CLOSE
   };
   pattern_piece(unsigned int const skip_length) : type_(SKIP), skip_length_(skip_length){}
-  pattern_piece(char const base) : type_(SINGLE_BASE), base_(base){}
+  pattern_piece(char const base) { 
+    if (base != '(' && base != ')') {
+      type_ = SINGLE_BASE;
+      base_ = base;
+    }
+    else if (base != ')') {
+      type_ = BRACE_OPEN;
+    }
+    else {
+      type_ = BRACE_CLOSE;
+    }
+  }
   pattern_piece(string const & search_term) : type_(FIND), search_term_(search_term){} 
   size_t const & type() { return type_; }
   char const & base() { return base_; }
   string const & search_term() { return search_term_; }
+  string const to_string();
 private:
-  size_t const type_;
+  size_t type_;
   //FIXME make these optional?
   char base_;
   unsigned int skip_length_;
   string search_term_;
 };
+
+string const pattern_piece::to_string() {
+  switch (this->type_) {
+  case SKIP:
+    break;
+  case FIND:
+    break;
+  case SINGLE_BASE:
+    break;
+  case BRACE_OPEN:
+    break;
+  case BRACE_CLOSE:
+    break;
+  }
+  return "dgnlskrnr";
+}
+
+
 
 typedef std::deque<pattern_piece> dna_pattern;
 
@@ -49,7 +81,7 @@ private:
   char base_;
 };
 
-typedef std::list<template_piece> dna_template;
+typedef std::deque<template_piece> dna_template;
 
 namespace {
 
@@ -337,6 +369,72 @@ string cmake_template(char *& dna, string & rna)
     }
   }
   throw finish_exception("ran out of dna!");
+}
+
+void pattern(char *& dna, string & rna, dna_pattern & result_pattern)
+{
+  string rescuable("");
+  bool finished(false);
+  unsigned int level(0); 
+  rna.reserve(strlen(dna));
+  while (!finished) {
+    rescuable="";
+    char first = dna[0];
+    ++dna;
+    switch (first) {
+    case 'C':
+      result_pattern.push_back(pattern_piece('I'));
+      break;
+    case 'F':
+      result_pattern.push_back(pattern_piece('C'));
+      break;
+    case 'P':
+      result_pattern.push_back(pattern_piece('F'));
+      break;
+    case 'I':
+      char second = dna[0];
+      ++dna;
+      switch (second) {
+      case 'C':
+	result_pattern.push_back(pattern_piece('P'));
+	break;
+      case 'F':
+	{
+	  ++dna;
+	  result_pattern.push_back(pattern_piece(cconsts(dna, rescuable)));
+	}
+	  break;
+      case 'P':
+	{
+	  result_pattern.push_back(pattern_piece(nrcinty_nat(dna, rescuable)));
+    	}
+	break;
+      case 'I':
+	char third = dna[0];
+	++dna;
+	switch (third) {
+	case 'P':
+	  ++level;
+	  result_pattern.push_back(pattern_piece('('));
+	  break;
+	case 'I':
+	  cpush_dna_to_rna(dna, rna);
+	  break;
+	default: //C or F yield the same
+	  if (level > 0) {
+	    --level;
+	    result_pattern.push_back(pattern_piece(')'));
+	  }
+	  else {
+	    return;
+	  }
+	  break;
+	}
+      }
+      break;
+    }
+  }
+  throw "compiler is silly";
 }
 
 string pattern(char *& dna, string & rna) //evil, but I'm lazy...
@@ -630,6 +728,25 @@ int main(int argc, char* argv[])
   std::cout << "Hey, I read in the dna, and the first few bases were: " << actual_dna.substr(0,100) << '\n';
   string pattern_holder(""),template_holder(""); 
   char * primitive_dna = const_cast<char *>(actual_dna.c_str());
+  
+  time_t start, fin;
+  start = time(NULL);
+  for (unsigned int i(0); i<1000; ++i){
+    char * dna_copy = primitive_dna;
+    string meh_rna, meh_pattern;
+    meh_pattern = pattern(dna_copy, meh_rna);
+  }
+  fin = time(NULL);
+  std::cout << "Crappy pattern took " << fin - start << " seconds" << '\n';
+  start = time(NULL);
+  for (unsigned int i(0); i<1000; ++i){
+    char * dna_copy = primitive_dna;
+    string meh_rna;
+    dna_pattern result;
+    pattern(dna_copy, meh_rna, result);
+  }
+  fin  =time(NULL);
+  std::cout << "Decent pattern took " << fin - start << " seconds" << '\n';
   try {
     time_t begin,end;
     begin = time(NULL);
