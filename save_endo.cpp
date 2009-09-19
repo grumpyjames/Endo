@@ -305,6 +305,64 @@ string make_template(string & dna, string & rna)
   throw finish_exception("ran out of dna!");
 }
 
+void cmake_template(char *& dna, string & rna, dna_template & result_template)
+{
+  string rescuable;
+  rna.reserve(strlen(dna));
+  //FIXME suspect calls to strlen will hurt a LOT.
+  while (true) { //strlen(dna)>0) { commented for memory
+    char first = dna[0];
+    ++dna;
+    switch (first) {
+    case 'C':
+      result_template.push_back(template_piece('I'));
+      break;
+    case 'F':
+      result_template.push_back(template_piece('C'));
+      break;
+    case 'P':
+      result_template.push_back(template_piece('F'));
+      break;
+    case 'I':
+      char second = dna[0];
+      ++dna;
+      switch (second) {
+      case 'C':
+	result_template.push_back(template_piece('P'));
+	break;
+      default:
+	{
+	  if (second=='F' || second=='P') {
+	    unsigned int l = nrcinty_nat(dna, rescuable);
+	    unsigned int n = nrcinty_nat(dna, rescuable);
+	    result_template.push_back(template_piece(n,l));
+	  }
+	  else { //char=='I'
+	    char third = dna[0];
+	    ++dna;
+	    switch (third) {
+	    case 'I':
+	      {
+		cpush_dna_to_rna(dna, rna);
+	      }
+	      break;
+	    case 'P':
+	      {
+		result_template.push_back(template_piece(nrcinty_nat(dna, rescuable)));
+	      }
+	      break;
+	    default: //C or F
+	      return;
+	    }
+	  }
+	  break;
+	}
+      }
+    }
+  }
+  throw finish_exception("ran out of dna!");
+}
+
 string cmake_template(char *& dna, string & rna)
 {
   string result_pattern;
@@ -509,32 +567,6 @@ string pattern(char *& dna, string & rna) //evil, but I'm lazy...
   throw "compiler is silly";
 }
 
-/*
-
-   function template () : Template =
-     let t : Template ← ε;
-     repeat
-       case dna starts with
-                          ⇒ dna ← dna[ 1 . . ]; t ← t I
-           ‘C’
-                          ⇒ dna ← dna[ 1 . . ]; t ← t C
-           ‘F’
-                          ⇒ dna ← dna[ 1 . . ]; t ← t F
-           ‘P’
-                          ⇒ dna ← dna[ 2 . . ]; t ← t P
-           ‘IC’
-           ‘IF’ or ‘IP’ ⇒ dna ← dna[ 2 . . ]; let l ← nat (); let n ← nat (); t ← t nl
-           ‘IIC’ or ‘IIF’ ⇒ dna ← dna[ 3 . . ]; return t
-                          ⇒ dna ← dna[ 3 . . ]; let n ← nat (); t ← t |n|
-           ‘IIP’
-                ⇒ rna ← rna dna[ 3 . . 10 ]; dna ← dna[ 10 . . ]
-           ‘III’
-           anything else ⇒ finish ()
-       end case
-     end repeat
-
- */
-
 //recursive call is ok - we're not allocating.
 void asnat(unsigned int k, std::string & to_write_to)
 {
@@ -552,28 +584,34 @@ void asnat(unsigned int k, std::string & to_write_to)
   }
 }
 
-//FIXME This is inaccurate
 void protect(unsigned int level, string & bits, string & to_write_to)
 {
   //std::cout << "bits is " << bits <<'\n';
   for (unsigned int i=0; i<=level; ++i) {
-    switch (bits[i]) {
-    case 'I':
-      to_write_to.push_back('C');
+    string temp("");
+    temp.reserve(bits.length() * 2);
+    for (unsigned int j=0; j<bits.length(); ++j){
+      switch (bits[i]) {
+      case 'I':
+	temp.push_back('C');
+	break;
+      case 'C':
+	temp.push_back('F');
       break;
-    case 'C':
-      to_write_to.push_back('F');
-      break;
-    case 'F':
-      to_write_to.push_back('P');
-      break;
-    case 'P':
-      to_write_to.append("IC");
-      break;
-    default:
-      break;
+      case 'F':
+	temp.push_back('P');
+	break;
+      case 'P':
+	temp.append("IC");
+	break;
+      default:
+	break;
+      }
     }
+    bits = temp;
+    temp = "";
   }
+  to_write_to = bits;
 }
 
 
