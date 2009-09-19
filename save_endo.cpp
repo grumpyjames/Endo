@@ -35,6 +35,7 @@ public:
   }
   pattern_piece(string const & search_term) : type_(FIND), search_term_(search_term){} 
   size_t const & type() { return type_; }
+  unsigned int const & skip_length() { return skip_length_;}
   char const & base() { return base_; }
   string const & search_term() { return search_term_; }
   string const to_string();
@@ -663,6 +664,65 @@ void replace(char * dna, string & a_template, std::deque<string> & env)
     }
   }
   std::cout << "r was " << r << '\n';
+}
+
+void match_replace(char * & dna, dna_pattern to_match, dna_template to_replace)
+{
+  unsigned int i(0);
+  std::list<unsigned int> c;
+  std::deque<string> env;
+  //std::cout << strlen(dna) << " - dna length" << '\n';
+  for (size_t s=0; s<to_match.size(); ++s) {
+    switch (to_match[s].type()) {
+    case pattern_piece::SKIP:
+      {
+	i += to_match[s].skip_length();
+      }
+      break;
+    case pattern_piece::FIND:
+      {
+	char * found = strstr(dna, to_match[s].search_term().c_str());
+	if (found == NULL)
+	  return;
+	else
+	  i = strlen(dna)-strlen(found);
+	break;
+      }
+    case pattern_piece::BRACE_OPEN:
+      //std::cout << i << " was pushed to the front of c" << '\n';
+      c.push_front(i);
+      break;
+    case pattern_piece::BRACE_CLOSE:
+      {
+	//std::cout << "Closing a brace" << '\n';
+	string building("");
+	//std::cout << "Instantiating a string" << '\n';
+	unsigned int moo = c.front();
+	building.reserve(i-moo);
+	//std::cout << "DNA length: " << strlen(dna) << ". Copying " << (i - moo) << " chars to building from position " << moo << '\n';
+	building.append(dna, moo, i-moo);
+	//std::cout << dna[moo] << " is the " << moo << "th dna character" << '\n';
+	//std::cout << "done it, building is now " << building << '\n';
+	env.push_back(building);
+	//std::cout << "Adding the building to the env" << '\n';
+	c.pop_front();
+	//std::cout << c.front() << " is now the front of c" << '\n';
+	//std::cout << "Removing the position from the list" << '\n';
+	break;
+      }
+    case pattern_piece::SINGLE_BASE: //I C F or P
+      if (to_match[s].base()==dna[i])
+	++i;
+      else
+	return;
+      break;
+    }
+  }
+  std::cout << "successful match: i= " << i << '\n'; 
+  dna+=i;
+  std::cout << "env[0] length is " << env[0].length() << " and starts with " << env[0].substr(0,10) << '\n';
+  std::cout << "env[1] length is " << env[1].length() << " and starts with " << env[1].substr(0,10) << '\n';
+  replace(dna, to_replace, env);
 }
 
 void match_replace(char *& dna, string pattern, string a_template)
