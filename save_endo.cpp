@@ -389,57 +389,6 @@ void protect(unsigned int level, string & bits, string & to_write_to)
   to_write_to = bits;
 }
 
-
-void replace(char * dna, string & a_template, std::deque<string> & env)
-{
-  string r("");
-  std::cout << "Replacing template has length " <<  a_template.length() << '\n';
-  for (unsigned int i=0; i<a_template.length(); ++i) {
-    switch (a_template[i]) {
-    case '[':
-      {
-	++i; //we want to start the search at the next char
-	size_t found = a_template.find('_', i);
-	unsigned int n;
-	std::cout << "finding template substring between chars " << i << " and " << (found) << '\n';
-	std::istringstream a_stream(a_template.substr(i, found-i));
-	a_stream >> n;
-	std::cout << "found n was " <<  n << '\n';
-	i = ++found;
-	found = a_template.find(']', i);
-	unsigned int l;
-	std::cout << "finding template substring between chars " << i << " and " << (found) << '\n';
-	std::istringstream b_stream(a_template.substr(i, found-i));
-	b_stream >> l;
-	std::cout << "found l was " <<  l << '\n';
-	i = found;
-	string to_append("");
-	std::cout << "about to do shit with protect" <<'\n';
-	protect(l, env[n], to_append);
-	r.append(to_append);
-      }
-      break;
-    case '|':
-      {
-	++i;
-	size_t found = a_template.find('|', i) - 1;
-	unsigned int n;
-	std::istringstream a_stream(a_template.substr(i, found));
-	a_stream >> n;
-	i = ++found; //should move us to the final |
-	string to_append;
-	asnat(env[n].length(), to_append);
-	r.append(to_append);
-      }
-      break;
-    default: //lone base
-      r.push_back(a_template[i]);
-      break;
-    }
-  }
-  std::cout << "r was " << r << '\n';
-}
-
 void replace(char * & dna, dna_template to_replace, std::deque<string> env)
 {
   string r("");
@@ -467,14 +416,14 @@ void replace(char * & dna, dna_template to_replace, std::deque<string> env)
       break;
     }
   }
-  std::cout << "r was " << r << '\n';
+  //std::cout << "r was " << r << '\n';
   string new_dna("");
   unsigned int new_dna_length = strlen(dna) + r.length();
   std::cout << new_dna_length << " is the new DNA length" << '\n';
   new_dna.reserve(strlen(dna) + r.length());
   new_dna.append(r);
   new_dna.append(dna);
-  delete[] dna;
+  //delete[] dna; //LEEEEAAAAAKKKK
   dna = const_cast<char *>(new_dna.c_str());
 }
 
@@ -538,78 +487,6 @@ void match_replace(char * & dna, dna_pattern to_match, dna_template to_replace)
   replace(dna, to_replace, env);
 }
 
-
-
-void match_replace(char *& dna, string pattern, string a_template)
-{
-  unsigned int i(0);
-  std::list<unsigned int> c;
-  std::deque<string> env;
-  //std::cout << strlen(dna) << " - dna length" << '\n';
-  for (size_t s=0; s<pattern.length(); ++s) {
-    switch (pattern[s]) {
-    case '!':
-      {
-	++s;
-	size_t end_of_nat = pattern.find('/', s) - 1;
-	string n = pattern.substr(s,end_of_nat-s+1);
-	//std::cout << "found nat: " << n << " end of nat " << end_of_nat << " s " << s << '\n';
-	s = end_of_nat;
-	i += atoi(n.c_str()); //evil, but probably quicker than streams: TEST!
-	//std::cout << "i is now " << i << '\n';
-      }
-      break;
-    case '?':
-      {
-	++s;
-	size_t end_of_consts = pattern.find('/',s) - 1;
-	string n = pattern.substr(s,end_of_consts-s+1);
-	char * found = strstr(dna, n.c_str());
-	if (found == NULL)
-	  return;
-	else
-	  i = strlen(dna)-strlen(found);
-	break;
-      }
-    case '(':
-      //std::cout << i << " was pushed to the front of c" << '\n';
-      c.push_front(i);
-      break;
-    case ')':
-      {
-	//std::cout << "Closing a brace" << '\n';
-	string building("");
-	//std::cout << "Instantiating a string" << '\n';
-	unsigned int moo = c.front();
-	building.reserve(i-moo);
-	//std::cout << "DNA length: " << strlen(dna) << ". Copying " << (i - moo) << " chars to building from position " << moo << '\n';
-	building.append(dna, moo, i-moo);
-	//std::cout << dna[moo] << " is the " << moo << "th dna character" << '\n';
-	//std::cout << "done it, building is now " << building << '\n';
-	env.push_back(building);
-	//std::cout << "Adding the building to the env" << '\n';
-	c.pop_front();
-	//std::cout << c.front() << " is now the front of c" << '\n';
-	//std::cout << "Removing the position from the list" << '\n';
-	break;
-      }
-    case '/':
-      break;
-    default: //I C F or P
-      if (pattern[s]==dna[i])
-	++i;
-      else
-	return;
-      break;
-    }
-  }
-  std::cout << "successful match: i= " << i << '\n'; 
-  dna+=i;
-  std::cout << "env[0] length is " << env[0].length() << " and starts with " << env[0].substr(0,10) << '\n';
-  std::cout << "env[1] length is " << env[1].length() << " and starts with " << env[1].substr(0,10) << '\n';
-  replace(dna, a_template, env);
-}
-
 int main(int argc, char* argv[])
 {
   //now do the real thing:
@@ -642,7 +519,7 @@ int main(int argc, char* argv[])
     std::cout << "rna length: " << actual_rna.length() << '\n';
     end = time(NULL);
     std::cout << "Template execution took " << end - begin << " seconds" << '\n';
-    match_replace(primitive_dna, pattern_holder, template_holder);
+    match_replace(primitive_dna, a_pattern, a_template);
   }
   catch (finish_exception & fe)
     {
