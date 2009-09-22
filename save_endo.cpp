@@ -76,6 +76,7 @@ public:
   size_t const & type() { return type_;}
   unsigned int & n() { return n_; }
   unsigned int & l() { return l_; }
+  char & base() { return base_; }
 private:
   size_t const type_;
   unsigned int n_, l_;
@@ -666,6 +667,45 @@ void replace(char * dna, string & a_template, std::deque<string> & env)
   std::cout << "r was " << r << '\n';
 }
 
+void replace(char * & dna, dna_template to_replace, std::deque<string> env)
+{
+  string r("");
+  std::cout << "Replacing template has length " <<  to_replace.size() << '\n';
+  for (unsigned int i=0; i<to_replace.size(); ++i) {
+    switch (to_replace[i].type()) {
+    case template_piece::N_L :
+      {
+	string to_append("");
+	std::cout << "about to do shit with protect" <<'\n';
+	protect(to_replace[i].l(), env[to_replace[i].n()], to_append);
+	r.append(to_append);
+      }
+      break;
+    case template_piece::N :
+      {
+	unsigned int n = to_replace[i].n();
+	string to_append("");
+	asnat(env[n].length(), to_append);
+	r.append(to_append);
+      }
+      break;
+    case template_piece::SINGLE_BASE: //lone base
+      r.push_back(to_replace[i].base());
+      break;
+    }
+  }
+  std::cout << "r was " << r << '\n';
+  string new_dna("");
+  unsigned int new_dna_length = strlen(dna) + r.length();
+  std::cout << new_dna_length << " is the new DNA length" << '\n';
+  new_dna.reserve(strlen(dna) + r.length());
+  new_dna.append(r);
+  new_dna.append(dna);
+  delete[] dna;
+  dna = const_cast<char *>(new_dna.c_str());
+}
+
+
 void match_replace(char * & dna, dna_pattern to_match, dna_template to_replace)
 {
   unsigned int i(0);
@@ -724,6 +764,8 @@ void match_replace(char * & dna, dna_pattern to_match, dna_template to_replace)
   std::cout << "env[1] length is " << env[1].length() << " and starts with " << env[1].substr(0,10) << '\n';
   replace(dna, to_replace, env);
 }
+
+
 
 void match_replace(char *& dna, string pattern, string a_template)
 {
