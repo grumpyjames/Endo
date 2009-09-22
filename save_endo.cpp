@@ -61,6 +61,7 @@ string const pattern_piece::to_s() {
       string to_return("");
       to_return.push_back('?');
       to_return.append(search_term_);
+      return to_return;
       break;
     }
   case SINGLE_BASE:
@@ -191,6 +192,34 @@ unsigned int nrcinty_nat(char *& dna, string & rescue)
   return to_return;
 }
 
+void nrcconsts(char *& dna, string & rescuable, string & to_write_to)
+{
+  bool done(false);
+  char last_char('X');
+  while (!done) {
+    char first = dna[0];
+    ++dna;
+    if (last_char=='I') {
+      if (first!='C') {
+	std::cout << "about to return " << to_write_to << " from nrcconsts" << '\n'; 
+	dna-=2; //back out the last two chars
+	return;
+      }
+      else
+	to_write_to.push_back('P');
+    }
+    else {
+      if (first=='C')
+	to_write_to.push_back('I');
+      else if (first=='F')
+	to_write_to.push_back('C');
+      else if (first=='P')
+	to_write_to.push_back('F');
+    }
+    last_char = first;
+  }
+}
+
 string cconsts(char *& dna, string & rescuable)
 {
   char first = dna[0];
@@ -306,7 +335,9 @@ void pattern(char *& dna, string & rna, dna_pattern & result_pattern)
       case 'F':
 	{
 	  ++dna;
-	  result_pattern.push_back(pattern_piece(cconsts(dna, rescuable)));
+	  string consts("");
+	  nrcconsts(dna, rescuable, consts);
+	  result_pattern.push_back(pattern_piece(consts));
 	}
 	  break;
       case 'P':
@@ -433,7 +464,6 @@ string * match_replace(char * & dna, dna_pattern to_match, dna_template to_repla
   unsigned int i(0);
   std::list<unsigned int> c;
   std::deque<string> env;
-  //std::cout << strlen(dna) << " - dna length" << '\n';
   for (size_t s=0; s<to_match.size(); ++s) {
     switch (to_match[s].type()) {
     case pattern_piece::SKIP:
@@ -451,25 +481,16 @@ string * match_replace(char * & dna, dna_pattern to_match, dna_template to_repla
 	break;
       }
     case pattern_piece::BRACE_OPEN:
-      //std::cout << i << " was pushed to the front of c" << '\n';
       c.push_front(i);
       break;
     case pattern_piece::BRACE_CLOSE:
       {
-	//std::cout << "Closing a brace" << '\n';
 	string building("");
-	//std::cout << "Instantiating a string" << '\n';
 	unsigned int moo = c.front();
 	building.reserve(i-moo);
-	//std::cout << "DNA length: " << strlen(dna) << ". Copying " << (i - moo) << " chars to building from position " << moo << '\n';
 	building.append(dna, moo, i-moo);
-	//std::cout << dna[moo] << " is the " << moo << "th dna character" << '\n';
-	//std::cout << "done it, building is now " << building << '\n';
 	env.push_back(building);
-	//std::cout << "Adding the building to the env" << '\n';
 	c.pop_front();
-	//std::cout << c.front() << " is now the front of c" << '\n';
-	//std::cout << "Removing the position from the list" << '\n';
 	break;
       }
     case pattern_piece::SINGLE_BASE: //I C F or P
@@ -502,12 +523,13 @@ int main(int argc, char* argv[])
   string * start_of_dna = &actual_dna;
 
   for (unsigned int i(0); i< 10; ++i) {
+    std::cout << '\n'<< "Iteration " << i << '\n'; 
     try {
       std::cout << "First few bases are ";
       for (unsigned int j(0); j<10; ++j) {
 	std::cout << primitive_dna[j];
       }
-      std::cout << '\n';
+      std::cout << " and dna length is " << strlen(primitive_dna) <<  '\n';
       time_t begin,end;
       begin = time(NULL);
       dna_pattern a_pattern;
@@ -522,8 +544,7 @@ int main(int argc, char* argv[])
       display(a_template);
       std::cout << "rna length: " << actual_rna.length() << '\n';
       end = time(NULL);
-      std::cout << "Template execution took " << end - begin << " seconds" << '\n';
-      
+      std::cout << "Template execution took " << end - begin << " seconds" << '\n';      
       try {
 	string * new_dna;
 	new_dna = match_replace(primitive_dna, a_pattern, a_template);
