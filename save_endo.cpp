@@ -362,7 +362,7 @@ void asnat(unsigned int k, std::string & to_write_to)
 void protect(unsigned int level, string & bits, string & to_write_to)
 {
   //std::cout << "bits is " << bits <<'\n';
-  for (unsigned int i=0; i<=level; ++i) {
+  for (unsigned int i=0; i<level; ++i) {
     string temp("");
     temp.reserve(bits.length() * 2);
     for (unsigned int j=0; j<bits.length(); ++j){
@@ -389,7 +389,7 @@ void protect(unsigned int level, string & bits, string & to_write_to)
   to_write_to = bits;
 }
 
-void replace(char * & dna, dna_template to_replace, std::deque<string> env)
+string * replace(char * & dna, dna_template to_replace, std::deque<string> env)
 {
   string r("");
   std::cout << "Replacing template has length " <<  to_replace.size() << '\n';
@@ -398,7 +398,7 @@ void replace(char * & dna, dna_template to_replace, std::deque<string> env)
     case template_piece::N_L :
       {
 	string to_append("");
-	std::cout << "about to do shit with protect" <<'\n';
+	std::cout << "about to do shit with protect: l = " << to_replace[i].l() << " n is " << to_replace[i].n() << " length of string being acted on is " << env[to_replace[i].n()].length() <<'\n';
 	protect(to_replace[i].l(), env[to_replace[i].n()], to_append);
 	r.append(to_append);
       }
@@ -416,19 +416,19 @@ void replace(char * & dna, dna_template to_replace, std::deque<string> env)
       break;
     }
   }
-  //std::cout << "r was " << r << '\n';
-  string new_dna("");
+  //FIXME Getting close to UB here.
+  //FIXME pass in a string for new dna to be written to to avoid heap usage?
+  string * new_dna = new string(""); //we're going to return a pointer to the c_str
   unsigned int new_dna_length = strlen(dna) + r.length();
   std::cout << new_dna_length << " is the new DNA length" << '\n';
-  new_dna.reserve(strlen(dna) + r.length());
-  new_dna.append(r);
-  new_dna.append(dna);
-  //delete[] dna; //LEEEEAAAAAKKKK
-  dna = const_cast<char *>(new_dna.c_str());
+  new_dna->reserve(strlen(dna) + r.length());
+  new_dna->append(r);
+  new_dna->append(dna);
+  return new_dna;
 }
 
-
-void match_replace(char * & dna, dna_pattern to_match, dna_template to_replace)
+//FIXME does this need to be char * & ?
+string * match_replace(char * & dna, dna_pattern to_match, dna_template to_replace)
 {
   unsigned int i(0);
   std::list<unsigned int> c;
@@ -445,7 +445,7 @@ void match_replace(char * & dna, dna_pattern to_match, dna_template to_replace)
       {
 	char * found = strstr(dna, to_match[s].search_term().c_str());
 	if (found == NULL)
-	  return;
+	  throw "No Match";
 	else
 	  i = strlen(dna)-strlen(found);
 	break;
@@ -476,7 +476,7 @@ void match_replace(char * & dna, dna_pattern to_match, dna_template to_replace)
       if (to_match[s].base()==dna[i])
 	++i;
       else
-	return;
+	throw "No Match";
       break;
     }
   }
@@ -484,7 +484,7 @@ void match_replace(char * & dna, dna_pattern to_match, dna_template to_replace)
   dna+=i;
   std::cout << "env[0] length is " << env[0].length() << " and starts with " << env[0].substr(0,10) << '\n';
   std::cout << "env[1] length is " << env[1].length() << " and starts with " << env[1].substr(0,10) << '\n';
-  replace(dna, to_replace, env);
+  return replace(dna, to_replace, env);
 }
 
 int main(int argc, char* argv[])
@@ -497,34 +497,49 @@ int main(int argc, char* argv[])
   std::cout << "max string size is " << actual_rna.max_size() << '\n';
 
   getline( ifs, actual_dna );
-  std::cout << "Hey, I read in the dna, and the first few bases were: " << actual_dna.substr(4526645,800) << '\n';
   string pattern_holder(""),template_holder(""); 
-  char * primitive_dna = const_cast<char *>(actual_dna.c_str());
+  char * primitive_dna = const_cast<char *>(actual_dna.c_str()); //FIXME Just read into a char buffer, this is a hack
+  string * start_of_dna = &actual_dna;
 
-  try {
-    time_t begin,end;
-    begin = time(NULL);
-    dna_pattern a_pattern;
-    pattern(primitive_dna, actual_rna, a_pattern);
-    //std::cout << "pattern: " << pattern_holder << '\n';
-    //std::cout << "pattern length was " << pattern_holder.length() << '\n';
-    end = time(NULL);
-    display(a_pattern);
-    std::cout << "Pattern execution took " << end - begin << " seconds" << '\n';
-    std::cout << "rna length: " << actual_rna.length() << '\n';
-    begin = end;
-    dna_template a_template;
-    cmake_template(primitive_dna, actual_rna, a_template);
-    display(a_template);
-    std::cout << "rna length: " << actual_rna.length() << '\n';
-    end = time(NULL);
-    std::cout << "Template execution took " << end - begin << " seconds" << '\n';
-    match_replace(primitive_dna, a_pattern, a_template);
-  }
-  catch (finish_exception & fe)
-    {
-      std::cout << "caught finished exc "<< fe.why() << '\n';
+  for (unsigned int i(0); i< 10; ++i) {
+    try {
+      std::cout << "First few bases are ";
+      for (unsigned int j(0); j<10; ++j) {
+	std::cout << primitive_dna[j];
+      }
+      std::cout << '\n';
+      time_t begin,end;
+      begin = time(NULL);
+      dna_pattern a_pattern;
+      pattern(primitive_dna, actual_rna, a_pattern);
+      end = time(NULL);
+      display(a_pattern);
+      std::cout << "Pattern execution took " << end - begin << " seconds" << '\n';
+      std::cout << "rna length: " << actual_rna.length() << '\n';
+      begin = end;
+      dna_template a_template;
+      cmake_template(primitive_dna, actual_rna, a_template);
+      display(a_template);
+      std::cout << "rna length: " << actual_rna.length() << '\n';
+      end = time(NULL);
+      std::cout << "Template execution took " << end - begin << " seconds" << '\n';
+      
+      try {
+	string * new_dna;
+	new_dna = match_replace(primitive_dna, a_pattern, a_template);
+	//delete start_of_dna; //FIXME this is getting seriously leaky!
+	//start_of_dna = new_dna;
+	primitive_dna = const_cast<char *>(new_dna->c_str());
+      }
+      catch (...) {
+	std::cout << "No match found" << '\n';
+      }
     }
+    catch (finish_exception & fe)
+      {
+	std::cout << "caught finished exc "<< fe.why() << '\n';
+      }
+  }
   exit(0);
 }
 
