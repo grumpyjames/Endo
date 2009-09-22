@@ -220,33 +220,6 @@ void nrcconsts(char *& dna, string & rescuable, string & to_write_to)
   }
 }
 
-string cconsts(char *& dna, string & rescuable)
-{
-  char first = dna[0];
-  ++dna;
-  switch (first) {
-  case 'C':
-    return "I" + cconsts(dna, rescuable);
-    break;
-  case 'F':
-    return "C" + cconsts(dna, rescuable);
-    break;
-  case 'P':
-    return "F" + cconsts(dna, rescuable);
-    break;
-  case 'I':
-    char second = dna[0];
-    ++dna;
-    if (second=='C')
-      return "P" + cconsts(dna, rescuable);
-    else 
-      return "";//throw finish_exception("not enough dna to complete consts");
-    break;
-  }
-  throw "compiler being silly";
-
-}
-
 void cmake_template(char *& dna, string & rna, dna_template & result_template)
 {
   string rescuable;
