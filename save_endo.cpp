@@ -38,7 +38,7 @@ public:
   unsigned int const & skip_length() { return skip_length_;}
   char const & base() { return base_; }
   string const & search_term() { return search_term_; }
-  string const to_string();
+  string const to_s();
 private:
   size_t type_;
   //FIXME make these optional?
@@ -47,18 +47,39 @@ private:
   string search_term_;
 };
 
-string const pattern_piece::to_string() {
+string const pattern_piece::to_s() {
   switch (this->type_) {
   case SKIP:
-    break;
+    {
+      std::stringstream out; //FIXME build/include boost and use lexical_cast?
+      out << "!";
+      out << skip_length();
+      return out.str();
+    }
   case FIND:
-    break;
+    {
+      string to_return("");
+      to_return.push_back('?');
+      to_return.append(search_term_);
+      break;
+    }
   case SINGLE_BASE:
-    break;
+    {
+      string to_return("");
+      to_return.push_back(base_);
+      return to_return;
+      break;
+    }
   case BRACE_OPEN:
-    break;
+    {
+      return "(";
+      break;
+    }
   case BRACE_CLOSE:
-    break;
+    {
+      return ")";
+      break;
+    }
   }
   return "dgnlskrnr";
 }
@@ -66,6 +87,15 @@ string const pattern_piece::to_string() {
 
 
 typedef std::deque<pattern_piece> dna_pattern;
+
+void display(dna_pattern & a_pattern)
+{
+  std::cout << "Pattern is ";
+  for (unsigned int i(0); i < a_pattern.size(); ++i) {
+    std::cout << a_pattern[i].to_s();
+  }
+  std::cout << '\n';
+}
 
 class template_piece {
 public:
@@ -77,13 +107,47 @@ public:
   unsigned int & n() { return n_; }
   unsigned int & l() { return l_; }
   char & base() { return base_; }
+  string to_s();
 private:
   size_t const type_;
   unsigned int n_, l_;
   char base_;
 };
 
+string template_piece::to_s() {
+  switch (type()) {
+  case SINGLE_BASE:
+    { 
+      string to_return;
+      to_return.push_back(base_);
+      return to_return;
+    }
+  case N_L:
+    {
+      std::stringstream out; //FIXME build/include boost and use lexical_cast?
+      out << "[" << n_ << "," << l_ << "]";
+      return out.str();
+    }
+  case N:
+    {
+      std::stringstream out; //FIXME build/include boost and use lexical_cast?
+      out << "|" << n_ << "|";
+      return out.str();
+    }
+  }
+  throw ("sigh");
+}
+
 typedef std::deque<template_piece> dna_template;
+
+void display(dna_template & a_template)
+{
+  std::cout << "Template is ";
+  for (unsigned int i(0); i<a_template.size(); ++i) {
+    std::cout << a_template[i].to_s();
+  }
+  std::cout << '\n';
+}
 
 namespace {
 
@@ -878,15 +942,18 @@ int main(int argc, char* argv[])
   try {
     time_t begin,end;
     begin = time(NULL);
-    pattern_holder = pattern(primitive_dna, actual_rna);
-    std::cout << "pattern: " << pattern_holder << '\n';
-    std::cout << "pattern length was " << pattern_holder.length() << '\n';
+    dna_pattern a_pattern;
+    pattern(primitive_dna, actual_rna, a_pattern);
+    //std::cout << "pattern: " << pattern_holder << '\n';
+    //std::cout << "pattern length was " << pattern_holder.length() << '\n';
     end = time(NULL);
+    display(a_pattern);
     std::cout << "Pattern execution took " << end - begin << " seconds" << '\n';
     std::cout << "rna length: " << actual_rna.length() << '\n';
     begin = end;
-    template_holder = cmake_template(primitive_dna, actual_rna);
-    std::cout << "template: " << template_holder << '\n';
+    dna_template a_template;
+    cmake_template(primitive_dna, actual_rna, a_template);
+    display(a_template);
     std::cout << "rna length: " << actual_rna.length() << '\n';
     end = time(NULL);
     std::cout << "Template execution took " << end - begin << " seconds" << '\n';
