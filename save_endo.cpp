@@ -446,12 +446,22 @@ string * match_replace(char * & dna, dna_pattern to_match, dna_template to_repla
       break;
     case pattern_piece::FIND:
       {
-	char * found = strstr(dna, to_match[s].search_term().c_str());
+	std::cout << "Searching for: " << to_match[s].search_term().c_str() << " i is " << i << '\n';
+	std::cout << "First 10 chars of dna from 7511838 th position are: ";
+	for (unsigned int j(7511838); j < 7511850 ; ++j) {
+	  std::cout << dna[j];
+	}
+	std::cout << '\n';
+	//FIXME - is this really the right call to make?
+	char const * found = strstr(dna, to_match[s].search_term().c_str());
+	std::cout << "found " << found << '\n';
 	if (found == NULL)
 	  throw "No Match";
-	else
-	  i = strlen(dna)-strlen(found);
-	break;
+	else {
+	  i = strlen(dna)-strlen(found)+to_match[s].search_term().length();
+	  std::cout << "i is now " << i << " and the ith character is " << dna[i] << '\n';
+	}
+	  break;
       }
     case pattern_piece::BRACE_OPEN:
       c.push_front(i);
