@@ -201,7 +201,6 @@ void nrcconsts(char *& dna, string & rescuable, string & to_write_to)
     ++dna;
     if (last_char=='I') {
       if (first!='C') {
-	std::cout << "about to return " << to_write_to << " from nrcconsts" << '\n'; 
 	dna-=2; //back out the last two chars
 	return;
       }
@@ -365,7 +364,6 @@ void asnat(unsigned int k, std::string & to_write_to)
 
 void protect(unsigned int level, string & bits, string & to_write_to)
 {
-  //std::cout << "bits is " << bits <<'\n';
   for (unsigned int i=0; i<level; ++i) {
     string temp("");
     temp.reserve(bits.length() * 2);
@@ -396,13 +394,11 @@ void protect(unsigned int level, string & bits, string & to_write_to)
 string * replace(char * & dna, dna_template to_replace, std::deque<string> env)
 {
   string r("");
-  std::cout << "Replacing template has length " <<  to_replace.size() << '\n';
   for (unsigned int i=0; i<to_replace.size(); ++i) {
     switch (to_replace[i].type()) {
     case template_piece::N_L :
       {
 	string to_append("");
-	std::cout << "about to do shit with protect: l = " << to_replace[i].l() << " n is " << to_replace[i].n() << " length of string being acted on is " << env[to_replace[i].n()].length() <<'\n';
 	protect(to_replace[i].l(), env[to_replace[i].n()], to_append);
 	r.append(to_append);
       }
@@ -423,8 +419,6 @@ string * replace(char * & dna, dna_template to_replace, std::deque<string> env)
   //FIXME Getting close to UB here.
   //FIXME pass in a string for new dna to be written to to avoid heap usage?
   string * new_dna = new string(""); //we're going to return a pointer to the c_str
-  unsigned int new_dna_length = strlen(dna) + r.length();
-  std::cout << new_dna_length << " is the new DNA length" << '\n';
   new_dna->reserve(strlen(dna) + r.length());
   new_dna->append(r);
   new_dna->append(dna);
@@ -446,22 +440,13 @@ string * match_replace(char * & dna, dna_pattern to_match, dna_template to_repla
       break;
     case pattern_piece::FIND:
       {
-	std::cout << "Searching for: " << to_match[s].search_term().c_str() << " i is " << i << '\n';
-	std::cout << "First 10 chars of dna from 7511838 th position are: ";
-	for (unsigned int j(7511838); j < 7511850 ; ++j) {
-	  std::cout << dna[j];
-	}
-	std::cout << '\n';
-	//FIXME - is this really the right call to make?
-	char const * found = strstr(dna, to_match[s].search_term().c_str());
-	std::cout << "found " << found << '\n';
+	char * haystack = dna + i;
+	char const * found = strstr(haystack, to_match[s].search_term().c_str());
 	if (found == NULL)
 	  throw "No Match";
-	else {
+	else
 	  i = strlen(dna)-strlen(found)+to_match[s].search_term().length();
-	  std::cout << "i is now " << i << " and the ith character is " << dna[i] << '\n';
-	}
-	  break;
+	break;
       }
     case pattern_piece::BRACE_OPEN:
       c.push_front(i);
@@ -498,8 +483,6 @@ int main(int argc, char* argv[])
   string actual_dna;
   string actual_rna("");
 
-  std::cout << "max string size is " << actual_rna.max_size() << '\n';
-
   getline( ifs, actual_dna );
   string pattern_holder(""),template_holder(""); 
   char * primitive_dna = const_cast<char *>(actual_dna.c_str()); //FIXME Just read into a char buffer, this is a hack
@@ -519,15 +502,15 @@ int main(int argc, char* argv[])
       pattern(primitive_dna, actual_rna, a_pattern);
       end = time(NULL);
       display(a_pattern);
-      std::cout << "Pattern execution took " << end - begin << " seconds" << '\n';
-      std::cout << "rna length: " << actual_rna.length() << '\n';
+      //std::cout << "Pattern execution took " << end - begin << " seconds" << '\n';
+      //std::cout << "rna length: " << actual_rna.length() << '\n';
       begin = end;
       dna_template a_template;
       cmake_template(primitive_dna, actual_rna, a_template);
       display(a_template);
       std::cout << "rna length: " << actual_rna.length() << '\n';
       end = time(NULL);
-      std::cout << "Template execution took " << end - begin << " seconds" << '\n';      
+      //std::cout << "Template execution took " << end - begin << " seconds" << '\n';      
       try {
 	string * new_dna;
 	new_dna = match_replace(primitive_dna, a_pattern, a_template);
