@@ -353,11 +353,11 @@ void asnat(unsigned int k, std::string & to_write_to)
     return;
   }
   else if (k & 1) {
-    to_write_to.push_back('I');
+    to_write_to.push_back('C');
     asnat(floor(k/2), to_write_to);
   }
   else {
-    to_write_to.push_back('C');
+    to_write_to.push_back('I');
     asnat(floor(k/2), to_write_to);
   }
 }
@@ -469,10 +469,10 @@ string * match_replace(char * & dna, dna_pattern to_match, dna_template to_repla
       break;
     }
   }
-  std::cout << "successful match: i= " << i << '\n'; 
+  //std::cout << "successful match: i= " << i << '\n'; 
   dna+=i;
-  std::cout << "env[0] length is " << env[0].length() << " and starts with " << env[0].substr(0,10) << '\n';
-  std::cout << "env[1] length is " << env[1].length() << " and starts with " << env[1].substr(0,10) << '\n';
+  // std::cout << "env[0] length is " << env[0].length() << " and starts with " << env[0].substr(0,10) << '\n';
+  //std::cout << "env[1] length is " << env[1].length() << " and starts with " << env[1].substr(0,10) << '\n';
   return replace(dna, to_replace, env);
 }
 
@@ -488,27 +488,27 @@ int main(int argc, char* argv[])
   char * primitive_dna = const_cast<char *>(actual_dna.c_str()); //FIXME Just read into a char buffer, this is a hack
   string * start_of_dna = &actual_dna;
 
-  for (unsigned int i(0); i< 10; ++i) {
+  for (unsigned int i(0); i< 1000; ++i) {
     std::cout << '\n'<< "Iteration " << i << '\n'; 
     try {
-      std::cout << "First few bases are ";
-      for (unsigned int j(0); j<10; ++j) {
-	std::cout << primitive_dna[j];
-      }
-      std::cout << " and dna length is " << strlen(primitive_dna) <<  '\n';
+      // std::cout << "First few bases are ";
+//       for (unsigned int j(0); j<10; ++j) {
+// 	std::cout << primitive_dna[j];
+//       }
+      //std::cout << " and dna length is " << strlen(primitive_dna) <<  '\n';
       time_t begin,end;
       begin = time(NULL);
       dna_pattern a_pattern;
       pattern(primitive_dna, actual_rna, a_pattern);
       end = time(NULL);
-      display(a_pattern);
+      //display(a_pattern);
       //std::cout << "Pattern execution took " << end - begin << " seconds" << '\n';
       //std::cout << "rna length: " << actual_rna.length() << '\n';
       begin = end;
       dna_template a_template;
       cmake_template(primitive_dna, actual_rna, a_template);
-      display(a_template);
-      std::cout << "rna length: " << actual_rna.length() << '\n';
+      //display(a_template);
+      //std::cout << "rna length: " << actual_rna.length() << '\n';
       end = time(NULL);
       //std::cout << "Template execution took " << end - begin << " seconds" << '\n';      
       try {
