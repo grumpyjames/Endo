@@ -31,6 +31,28 @@ namespace {
   {
     return ceil(static_cast<double>(k) * one_over_ln_2);
   }
+
+typedef std::pair<char const *, char const *> ends;
+
+namespace {
+  class dna_string {
+  public:
+    void operator++() {
+      if (current_location == innards[current_index].second)
+	current_location = innards[++current_index].first;
+      else
+	++current_location;
+    }
+    char const * beginning() { return innards.front().first; }
+    char const * back() { return innards.back().second; }
+    char const & get() { return *current_location; }
+    void push_back(ends const & to_push) { innards.push_back(to_push); }
+    void push_front(ends const & to_push) { innards.push_front(to_push); }
+  private:
+    std::deque<ends> innards;
+    size_t current_index;
+    char const * current_location;    
+  };
 }
 
 class pattern_piece {
@@ -699,6 +721,11 @@ void alt_main(dna_string dna)
   assert(false);
 }
 
+void alt_main(dna_string dna)
+{
+  std::cout << "Made it to alt main" << '\n';
+}
+
 int main(int argc, char* argv[])
 {
   //now do the real thing:
@@ -708,38 +735,34 @@ int main(int argc, char* argv[])
   char * primitive_dna = new char[7523060];
   ifs.read(primitive_dna, 7523060);
   string pattern_holder(""),template_holder(""); 
-  char * primitive_dna = const_cast<char *>(actual_dna.c_str()); //FIXME Just read into a char buffer, this is a hack
-  string * start_of_dna = &actual_dna;
 
-  for (unsigned int i(0); i< 1000; ++i) {
+  char * start_of_dna = primitive_dna;
+  char * end_of_dna = primitive_dna + 7523060;
+  ends initial(start_of_dna, end_of_dna);
+  dna_string whole_dna;
+  whole_dna.push_back(initial);
+  std::cout << strlen(primitive_dna) << '\n';
+  for (unsigned int i(0); i< 200; ++i) {
     std::cout << '\n'<< "Iteration " << i << '\n'; 
     try {
-      // std::cout << "First few bases are ";
-//       for (unsigned int j(0); j<10; ++j) {
-// 	std::cout << primitive_dna[j];
-//       }
-      //std::cout << " and dna length is " << strlen(primitive_dna) <<  '\n';
       time_t begin,end;
       begin = time(NULL);
       dna_pattern a_pattern;
       pattern(primitive_dna, actual_rna, a_pattern);
       end = time(NULL);
-      //display(a_pattern);
-      //std::cout << "Pattern execution took " << end - begin << " seconds" << '\n';
-      //std::cout << "rna length: " << actual_rna.length() << '\n';
+      display(a_pattern);
       begin = end;
       dna_template a_template;
       cmake_template(primitive_dna, actual_rna, a_template);
-      //display(a_template);
-      //std::cout << "rna length: " << actual_rna.length() << '\n';
+      display(a_template);
+      std::cout << "rna length: " << actual_rna.length() << '\n';
       end = time(NULL);
-      //std::cout << "Template execution took " << end - begin << " seconds" << '\n';      
       try {
 	string * new_dna;
 	new_dna = match_replace(primitive_dna, a_pattern, a_template);
-	//delete start_of_dna; //FIXME this is getting seriously leaky!
-	//start_of_dna = new_dna;
-	primitive_dna = const_cast<char *>(new_dna->c_str());
+	primitive_dna = new_dna;
+	delete[] start_of_dna;
+	start_of_dna = primitive_dna;
       }
       catch (...) {
 	std::cout << "No match found" << '\n';
