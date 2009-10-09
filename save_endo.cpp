@@ -708,12 +708,48 @@ int main(int argc, char* argv[])
   char * primitive_dna = new char[7523060];
   ifs.read(primitive_dna, 7523060);
   string pattern_holder(""),template_holder(""); 
-  char * start_of_dna = primitive_dna;
-  char * end_of_dna = primitive_dna + 7523059;
-  ends initial(start_of_dna, end_of_dna, 0);
-  dna_string whole_dna;
-  whole_dna.push_back(initial);
-  alt_main(whole_dna);
+  char * primitive_dna = const_cast<char *>(actual_dna.c_str()); //FIXME Just read into a char buffer, this is a hack
+  string * start_of_dna = &actual_dna;
+
+  for (unsigned int i(0); i< 1000; ++i) {
+    std::cout << '\n'<< "Iteration " << i << '\n'; 
+    try {
+      // std::cout << "First few bases are ";
+//       for (unsigned int j(0); j<10; ++j) {
+// 	std::cout << primitive_dna[j];
+//       }
+      //std::cout << " and dna length is " << strlen(primitive_dna) <<  '\n';
+      time_t begin,end;
+      begin = time(NULL);
+      dna_pattern a_pattern;
+      pattern(primitive_dna, actual_rna, a_pattern);
+      end = time(NULL);
+      //display(a_pattern);
+      //std::cout << "Pattern execution took " << end - begin << " seconds" << '\n';
+      //std::cout << "rna length: " << actual_rna.length() << '\n';
+      begin = end;
+      dna_template a_template;
+      cmake_template(primitive_dna, actual_rna, a_template);
+      //display(a_template);
+      //std::cout << "rna length: " << actual_rna.length() << '\n';
+      end = time(NULL);
+      //std::cout << "Template execution took " << end - begin << " seconds" << '\n';      
+      try {
+	string * new_dna;
+	new_dna = match_replace(primitive_dna, a_pattern, a_template);
+	//delete start_of_dna; //FIXME this is getting seriously leaky!
+	//start_of_dna = new_dna;
+	primitive_dna = const_cast<char *>(new_dna->c_str());
+      }
+      catch (...) {
+	std::cout << "No match found" << '\n';
+      }
+    }
+    catch (finish_exception & fe)
+      {
+	std::cout << "caught finished exc "<< fe.why() << '\n';
+      }
+  }
   return 0;
 }
 
