@@ -391,7 +391,7 @@ void protect(unsigned int level, string & bits, string & to_write_to)
   to_write_to = bits;
 }
 
-string * replace(char * & dna, dna_template to_replace, std::deque<string> env)
+char * replace(char * & dna, dna_template to_replace, std::deque<string> env)
 {
   string r("");
   for (unsigned int i=0; i<to_replace.size(); ++i) {
@@ -417,16 +417,18 @@ string * replace(char * & dna, dna_template to_replace, std::deque<string> env)
     }
   }
   //FIXME Getting close to UB here.
-  //FIXME pass in a string for new dna to be written to to avoid heap usage?
-  string * new_dna = new string(""); //we're going to return a pointer to the c_str
-  new_dna->reserve(strlen(dna) + r.length());
-  new_dna->append(r);
-  new_dna->append(dna);
+  //FIXME pass in a string for new dna to be written to to avoid heap usage
+  char * new_dna = new char[strlen(dna) + r.length()];
+  memcpy(new_dna, r.c_str(), r.length());
+  memcpy(new_dna + r.length(), dna, strlen(dna));
+  //new_dna->reserve(strlen(dna) + r.length());
+  //new_dna->append(r);
+  //new_dna->append(dna);
   return new_dna;
 }
 
 //FIXME does this need to be char * & ?
-string * match_replace(char * & dna, dna_pattern to_match, dna_template to_replace)
+char * match_replace(char * & dna, dna_pattern to_match, dna_template to_replace)
 {
   unsigned int i(0);
   std::list<unsigned int> c;
@@ -482,13 +484,14 @@ int main(int argc, char* argv[])
   ifstream ifs( "endo.dna" );
   string actual_dna;
   string actual_rna("");
-
-  getline( ifs, actual_dna );
+  char * primitive_dna = new char[7523060];
+  ifs.read(primitive_dna, 7523060);
+  //getline( ifs, actual_dna );
   string pattern_holder(""),template_holder(""); 
-  char * primitive_dna = const_cast<char *>(actual_dna.c_str()); //FIXME Just read into a char buffer, this is a hack
-  string * start_of_dna = &actual_dna;
-
-  for (unsigned int i(0); i< 1000; ++i) {
+  //primitive_dna = const_cast<char *>(actual_dna.c_str()); //FIXME Just read into a char buffer, this is a hack
+  char * start_of_dna = primitive_dna;
+  std::cout << strlen(primitive_dna) << '\n';
+  for (unsigned int i(0); i< 20; ++i) {
     std::cout << '\n'<< "Iteration " << i << '\n'; 
     try {
       // std::cout << "First few bases are ";
@@ -512,11 +515,13 @@ int main(int argc, char* argv[])
       end = time(NULL);
       //std::cout << "Template execution took " << end - begin << " seconds" << '\n';      
       try {
-	string * new_dna;
+	char * new_dna;
 	new_dna = match_replace(primitive_dna, a_pattern, a_template);
 	//delete start_of_dna; //FIXME this is getting seriously leaky!
 	//start_of_dna = new_dna;
-	primitive_dna = const_cast<char *>(new_dna->c_str());
+	primitive_dna = new_dna;
+	delete[] start_of_dna;
+	start_of_dna = primitive_dna;
       }
       catch (...) {
 	std::cout << "No match found" << '\n';
