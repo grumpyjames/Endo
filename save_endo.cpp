@@ -656,6 +656,9 @@ void alt_main(dna_string dna)
   dna_pattern our_pattern;
   pattern(dna, rna, our_pattern);
   display(our_pattern);
+  dna_template our_template;
+  make_template(dna, rna, our_template);
+  display(our_template);
   std::cout << "Leaving alt main" << '\n';
 }
 
