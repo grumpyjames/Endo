@@ -268,6 +268,62 @@ void nrcconsts(char *& dna, string & rescuable, string & to_write_to)
   }
 }
 
+void make_template(dna_string & dna, dna_string & rna, dna_template & result_template)
+{
+  //FIXME suspect calls to strlen will hurt a LOT.
+  while (dna.has_next()) {
+    char const first = dna.get();
+    ++dna;
+    switch (first) {
+    case 'C':
+      result_template.push_back(template_piece('I'));
+      break;
+    case 'F':
+      result_template.push_back(template_piece('C'));
+      break;
+    case 'P':
+      result_template.push_back(template_piece('F'));
+      break;
+    case 'I':
+      char const second = dna.get();
+      ++dna;
+      switch (second) {
+      case 'C':
+	result_template.push_back(template_piece('P'));
+	break;
+      default:
+	{
+	  if (second=='F' || second=='P') {
+	    unsigned int l = nrcinty_nat(dna);
+	    unsigned int n = nrcinty_nat(dna);
+	    result_template.push_back(template_piece(n,l));
+	  }
+	  else { //char=='I'
+	    char const third = dna.get();
+	    ++dna;
+	    switch (third) {
+	    case 'I':
+	      {
+		dna.push_to(rna, 7);
+	      }
+	      break;
+	    case 'P':
+	      {
+		result_template.push_back(template_piece(nrcinty_nat(dna)));
+	      }
+	      break;
+	    default: //C or F
+	      return;
+	    }
+	  }
+	  break;
+	}
+      }
+    }
+  }
+  throw finish_exception("ran out of dna!");
+}
+
 void cmake_template(char *& dna, string & rna, dna_template & result_template)
 {
   string rescuable;
