@@ -1,4 +1,5 @@
 #include <string>
+#include <cstring>
 #include <assert.h>
 #include <iostream>
 #include <fstream>
@@ -6,10 +7,12 @@
 #include <cmath>
 #include <deque>
 #include <list>
+#include <utility>
 #include "time.h"
-
+#include "dna_string.h"
 using std::string;
 using std::ifstream;
+
 
 class pattern_piece {
 public:
@@ -170,6 +173,25 @@ void cpush_dna_to_rna(char *& dna, string & rna)
   dna+=7;
 }
 
+unsigned int nrcinty_nat(dna_string & dna) {
+  char const  * start = dna.get_char_ptr();
+  dna.skip_to_first('P');
+  ++dna; //want the char after P
+  location to_return_to;
+  dna.save_position(to_return_to);
+  --dna; //back at the P again
+  unsigned int to_return(0);
+  while(start != dna.get_char_ptr()) {
+    --dna;
+    if (dna.get()!='C')
+      to_return = (2 * to_return);
+    else
+      to_return = (2 * to_return) + 1;
+  }
+  dna.load_position(to_return_to);
+  return to_return;
+}
+
 
 //non recursive
 unsigned int nrcinty_nat(char *& dna, string & rescue)
@@ -190,6 +212,33 @@ unsigned int nrcinty_nat(char *& dna, string & rescue)
   }
   dna = point_dna_to_me_at_the_end;
   return to_return;
+}
+
+void nrcconsts(dna_string & dna, string & to_write_to) {
+  bool done(false);
+  char last_char('X');
+  while (!done) {
+    char const first = dna.get();
+    ++dna;
+    if (last_char=='I') {
+      if (first!='C') {
+	dna-=2; //back out the last two chars
+	return;
+      }
+      else {
+	to_write_to.push_back('P');
+      }
+    }
+    else {
+      if (first=='C')
+	to_write_to.push_back('I');
+      else if (first=='F')
+	to_write_to.push_back('C');
+      else if (first=='P')
+	to_write_to.push_back('F');
+    }
+    last_char = first;
+  }
 }
 
 void nrcconsts(char *& dna, string & rescuable, string & to_write_to)
@@ -275,6 +324,72 @@ void cmake_template(char *& dna, string & rna, dna_template & result_template)
     }
   }
   throw finish_exception("ran out of dna!");
+}
+
+void pattern(dna_string & dna, dna_string & rna, dna_pattern & result_pattern)
+{
+  string rescuable("");
+  unsigned int level(0); 
+  while (dna.has_next()) {
+    rescuable="";
+    char const first = dna.get();
+    ++dna;
+    switch (first) {
+    case 'C':
+      result_pattern.push_back(pattern_piece('I'));
+      break;
+    case 'F':
+      result_pattern.push_back(pattern_piece('C'));
+      break;
+    case 'P':
+      result_pattern.push_back(pattern_piece('F'));
+      break;
+    case 'I':
+      char const second = dna.get();
+      ++dna;
+      switch (second) {
+      case 'C':
+	result_pattern.push_back(pattern_piece('P'));
+	break;
+      case 'F':
+	{
+	  ++dna;
+	  string consts("");
+	  nrcconsts(dna, consts);
+	  result_pattern.push_back(pattern_piece(consts));
+	}
+	  break;
+      case 'P':
+	{
+	  result_pattern.push_back(pattern_piece(nrcinty_nat(dna)));
+    	}
+	break;
+      case 'I':
+	char const third = dna.get();
+	++dna;
+	switch (third) {
+	case 'P':
+	  ++level;
+	  result_pattern.push_back(pattern_piece('('));
+	  break;
+	case 'I':
+	  dna.push_to(rna, 7);
+	  break;
+	default: //C or F yield the same
+	  if (level > 0) {
+	    --level;
+	    result_pattern.push_back(pattern_piece(')'));
+	  }
+	  else {
+	    return;
+	  }
+	  break;
+	}
+      }
+      break;
+    }
+  }
+  throw "compiler is silly";
 }
 
 void pattern(char *& dna, string & rna, dna_pattern & result_pattern)
@@ -478,6 +593,16 @@ char * match_replace(char * & dna, dna_pattern to_match, dna_template to_replace
   return replace(dna, to_replace, env);
 }
 
+void alt_main(dna_string dna)
+{
+  std::cout << "Made it to alt main" << '\n';
+  dna_string rna;
+  dna_pattern our_pattern;
+  pattern(dna, rna, our_pattern);
+  display(our_pattern);
+  std::cout << "Leaving alt main" << '\n';
+}
+
 int main(int argc, char* argv[])
 {
   //now do the real thing:
@@ -486,39 +611,32 @@ int main(int argc, char* argv[])
   string actual_rna("");
   char * primitive_dna = new char[7523060];
   ifs.read(primitive_dna, 7523060);
-  //getline( ifs, actual_dna );
   string pattern_holder(""),template_holder(""); 
-  //primitive_dna = const_cast<char *>(actual_dna.c_str()); //FIXME Just read into a char buffer, this is a hack
   char * start_of_dna = primitive_dna;
+  char * end_of_dna = primitive_dna + 7523060;
+  ends initial(start_of_dna, end_of_dna);
+  dna_string whole_dna;
+  whole_dna.push_back(initial);
+  alt_main(whole_dna);
   std::cout << strlen(primitive_dna) << '\n';
-  for (unsigned int i(0); i< 20; ++i) {
+  for (unsigned int i(0); i< 200; ++i) {
     std::cout << '\n'<< "Iteration " << i << '\n'; 
     try {
-      // std::cout << "First few bases are ";
-//       for (unsigned int j(0); j<10; ++j) {
-// 	std::cout << primitive_dna[j];
-//       }
-      //std::cout << " and dna length is " << strlen(primitive_dna) <<  '\n';
       time_t begin,end;
       begin = time(NULL);
       dna_pattern a_pattern;
       pattern(primitive_dna, actual_rna, a_pattern);
       end = time(NULL);
-      //display(a_pattern);
-      //std::cout << "Pattern execution took " << end - begin << " seconds" << '\n';
-      //std::cout << "rna length: " << actual_rna.length() << '\n';
+      display(a_pattern);
       begin = end;
       dna_template a_template;
       cmake_template(primitive_dna, actual_rna, a_template);
-      //display(a_template);
-      //std::cout << "rna length: " << actual_rna.length() << '\n';
+      display(a_template);
+      std::cout << "rna length: " << actual_rna.length() << '\n';
       end = time(NULL);
-      //std::cout << "Template execution took " << end - begin << " seconds" << '\n';      
       try {
 	char * new_dna;
 	new_dna = match_replace(primitive_dna, a_pattern, a_template);
-	//delete start_of_dna; //FIXME this is getting seriously leaky!
-	//start_of_dna = new_dna;
 	primitive_dna = new_dna;
 	delete[] start_of_dna;
 	start_of_dna = primitive_dna;
@@ -532,7 +650,7 @@ int main(int argc, char* argv[])
 	std::cout << "caught finished exc "<< fe.why() << '\n';
       }
   }
-  exit(0);
+  return 0;
 }
 
 void test_pattern(char * primitive_dna) {
