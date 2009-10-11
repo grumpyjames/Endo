@@ -598,8 +598,57 @@ char * replace(char * & dna, dna_template to_replace, std::deque<string> env)
   return new_dna;
 }
 
+void replace(dna_string & dna, std::deque<dna_string> & env, dna_template & to_replace)
+{
+  
+} 
+
+void match_replace(dna_string & dna, dna_pattern & to_match, dna_template & to_replace)
+{
+  std::list<location> c;
+  std::deque<dna_string> env;
+  location start_location;
+  dna.save_position(start_location);
+  for (size_t s=0; s<to_match.size(); ++s) {
+    switch (to_match[s].type()) {
+    case pattern_piece::SKIP:
+      {
+	dna += (to_match[s].skip_length());
+      }
+      break;
+    case pattern_piece::FIND:
+      {
+	dna.skip_to_first(to_match[s].search_term().c_str(), to_match[s].search_term().length());
+	if (!dna.has_next()) {
+	  dna.load_position(start_location);
+	  return;
+	}
+      }
+    case pattern_piece::BRACE_OPEN:
+      c.push_front(dna.current_location());
+      break;
+    case pattern_piece::BRACE_CLOSE:
+      {
+	location moo = c.front();
+	dna_string env_piece;
+	dna.substr_from(moo, env_piece);
+	env.push_back(env_piece);
+	c.pop_front();
+	break;
+      }
+    case pattern_piece::SINGLE_BASE: //I C F or P
+      if (to_match[s].base()==dna.get())
+	++dna;
+      else
+	throw "No Match";
+      break;
+    }
+  }
+  replace(dna, env, to_replace);
+}
+
 //FIXME does this need to be char * & ?
-char * match_replace(char * & dna, dna_pattern to_match, dna_template to_replace)
+char * match_replace(char * & dna, dna_pattern & to_match, dna_template & to_replace)
 {
   unsigned int i(0);
   std::list<unsigned int> c;
