@@ -54,6 +54,7 @@ class dna_string {
       current_index_ = 0;
     }
   }
+  void push_back(char const & to_push);
   void push_front(ends const & to_push) { innards.push_front(to_push); }
   void skip_to_first(char const & to_find) {
     while (has_next() && *current_location_!=to_find)
@@ -81,6 +82,9 @@ class dna_string {
   }
   void skip_to_first(const char * needle, size_t const length);
   location const current_location();
+  unsigned int const length();
+  void append(dna_string const & to_push);
+  void prepend(dna_string const & to_prepend);
  private:
   void reset() {
     current_index_ = 0;

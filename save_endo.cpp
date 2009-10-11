@@ -533,6 +533,23 @@ void asnat(unsigned int k, std::string & to_write_to)
   }
 }
 
+//my char * must have as least ceil(log_2(k)) chars left.
+void asnat(unsigned int const k, char * to_write_to)
+{
+   if (k==0) {
+    *to_write_to = 'P';
+    return;
+  }
+  else if (k & 1) {
+    *to_write_to = 'C';
+    asnat(floor(k/2), ++to_write_to);
+  }
+  else {
+    *to_write_to = 'I';
+    asnat(floor(k/2), ++to_write_to);
+  }
+} 
+
 void protect(unsigned int level, string & bits, string & to_write_to)
 {
   for (unsigned int i=0; i<level; ++i) {
@@ -598,9 +615,74 @@ char * replace(char * & dna, dna_template to_replace, std::deque<string> env)
   return new_dna;
 }
 
+void protect(unsigned int const level, dna_string & to_protect)
+{
+  if (level==0)
+    return; //cheeky early return for the common case.
+  //otherwise, fail - we'll have to allocate, and do some work
+  //equally, I want to see if this ever actually gets called
+  std::cerr << "Not implemented yet!" << '\n';
+  throw "called protect with non zero l - not implemented yet!";
+#if 0
+  char * to_write_to = new char[to_protect.length() * 2]; //FIXME Collect anything we don't use.
+  
+  
+
+  for (unsigned int i=0; i<level; ++i) {
+    for (unsigned int j=0; j<bits.length(); ++j){
+      switch (bits[i]) {
+      case 'I':
+	temp.push_back('C');
+	break;
+      case 'C':
+	temp.push_back('F');
+	break;
+      case 'F':
+	temp.push_back('P');
+	break;
+      case 'P':
+	temp.append("IC");
+	break;
+      default:
+	break;
+      }
+    }
+    bits = temp;
+    temp = "";
+  }
+  to_write_to = bits;
+#endif
+}
+
 void replace(dna_string & dna, std::deque<dna_string> & env, dna_template & to_replace)
 {
-  
+  dna_string r;
+  for (unsigned int i=0; i<to_replace.size(); ++i) {
+    switch (to_replace[i].type()) {
+    case template_piece::N_L :
+      {
+	dna_string to_protect = env[to_replace[i].n()];
+	protect(to_replace[i].l(), to_protect);
+	r.append(to_protect);
+      }
+      break;
+    case template_piece::N :
+      {
+	unsigned int n = to_replace[i].n();
+	size_t max_length = ceil(log(n)) + 1;
+	char * to_append = new char[max_length];
+	char * start = to_append;
+	asnat(env[n].length(), to_append);
+	ends some_ends(start, to_append);
+      	r.push_back(some_ends);
+      }
+      break;
+    case template_piece::SINGLE_BASE: //lone base
+      r.push_back(to_replace[i].base()); //UGH!
+      break;
+    }
+  }
+  dna.prepend(r);
 } 
 
 void match_replace(dna_string & dna, dna_pattern & to_match, dna_template & to_replace)

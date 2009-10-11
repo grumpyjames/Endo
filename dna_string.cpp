@@ -1,5 +1,32 @@
 #include "dna_string.h"
 
+char const I = 'I';
+char const C = 'C';
+char const F = 'F';
+char const P = 'P';
+ends const eI(&I, &I);
+ends const eC(&C, &C);
+ends const eF(&F, &F);
+ends const eP(&P, &P);
+
+void dna_string::push_back(char const & to_push)
+{
+  switch (to_push) {
+  case 'I':
+    push_back(eI);
+    break;
+  case 'C':
+    push_back(eC);
+    break;
+  case 'F':
+    push_back(eF);
+    break;
+  case 'P':
+    push_back(eP);
+    break;
+  }
+}
+
 void dna_string::substr_from(location const & from, dna_string & to_copy_to)
 {
   location seeker(from);
