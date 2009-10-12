@@ -10,9 +10,17 @@
 #include <utility>
 #include "time.h"
 #include "dna_string.h"
+#include <math.h>
 using std::string;
 using std::ifstream;
 
+namespace {
+  double one_over_ln_2(1/(log(2.0f)));
+  unsigned int const log2_ceil(unsigned int const k)
+  {
+    return ceil(static_cast<double>(k) * one_over_ln_2);
+  }
+}
 
 class pattern_piece {
 public:
@@ -669,16 +677,16 @@ void replace(dna_string & dna, std::deque<dna_string> & env, dna_template & to_r
     case template_piece::N :
       {
 	unsigned int n = to_replace[i].n();
-	size_t max_length = ceil(log(n)) + 1;
+	unsigned int max_length(log2_ceil(n) + 1);
 	char * to_append = new char[max_length];
-	char * start = to_append;
+	char * beginning = to_append;
 	asnat(env[n].length(), to_append);
-	ends some_ends(start, to_append);
+	ends some_ends(beginning, to_append);
       	r.push_back(some_ends);
       }
       break;
     case template_piece::SINGLE_BASE: //lone base
-      r.push_back(to_replace[i].base()); //UGH!
+      r.push_back(to_replace[i].base()); //FIXME UGH! Do something about this.
       break;
     }
   }

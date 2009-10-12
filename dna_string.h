@@ -81,10 +81,13 @@ class dna_string {
     }
   }
   void skip_to_first(const char * needle, size_t const length);
-  location const current_location();
-  unsigned int const length();
+  location const current_location() const;
+  unsigned int const length() const;
   void append(dna_string const & to_push);
   void prepend(dna_string const & to_prepend);
+  void push_ends_back(ends const & to_push);
+  std::deque<ends>::const_iterator begin() const { return innards.begin(); }
+  std::deque<ends>::const_iterator end() const { return innards.end(); }
  private:
   void reset() {
     current_index_ = 0;
