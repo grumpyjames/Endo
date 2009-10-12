@@ -312,7 +312,7 @@ void make_template(dna_string & dna, dna_string & rna, dna_template & result_tem
 	    switch (third) {
 	    case 'I':
 	      {
-		dna.push_to(rna, 7);
+		dna.push_to(rna, 8);
 	      }
 	      break;
 	    case 'P':
@@ -680,7 +680,7 @@ void replace(dna_string & dna, std::deque<dna_string> & env, dna_template & to_r
 	unsigned int max_length(log2_ceil(n) + 1);
 	char * to_append = new char[max_length];
 	char * beginning = to_append;
-	asnat(env[n].length(), to_append);
+	asnat(env[n].remaining_length(), to_append);
 	ends some_ends(beginning, to_append);
       	r.push_back(some_ends);
       }
@@ -790,7 +790,7 @@ char * match_replace(char * & dna, dna_pattern & to_match, dna_template & to_rep
 
 void alt_main(dna_string dna)
 {
-  std::cout << "Made it to alt main" << '\n';
+  std::cout << "Made it to alt main: dna string is this long: " << dna.remaining_length() << '\n';
   dna_string rna;
   dna_pattern our_pattern;
   pattern(dna, rna, our_pattern);
@@ -798,6 +798,9 @@ void alt_main(dna_string dna)
   dna_template our_template;
   make_template(dna, rna, our_template);
   display(our_template);
+  match_replace(dna, our_pattern, our_template);
+  std::cout << "Remaining dna length is " << dna.remaining_length() << '\n';
+  std::cout << "RNA length is " << rna.remaining_length() << '\n';
   std::cout << "Leaving alt main" << '\n';
 }
 
@@ -811,7 +814,7 @@ int main(int argc, char* argv[])
   ifs.read(primitive_dna, 7523060);
   string pattern_holder(""),template_holder(""); 
   char * start_of_dna = primitive_dna;
-  char * end_of_dna = primitive_dna + 7523060;
+  char * end_of_dna = primitive_dna + 7523059;
   ends initial(start_of_dna, end_of_dna);
   dna_string whole_dna;
   whole_dna.push_back(initial);

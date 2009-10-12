@@ -3,64 +3,50 @@
 #include <functional>
 #include <boost/bind.hpp>
 
-using namespace std;
-
-char const I = 'I';
-char const C = 'C';
-char const F = 'F';
-char const P = 'P';
-ends const eI(&I, &I);
-ends const eC(&C, &C);
-ends const eF(&F, &F);
-ends const eP(&P, &P);
-
 void dna_string::prepend(dna_string const & to_prepend)
 {
+  for (size_t s(0); s<current_index_; ++s)
+    innards.pop_front();
+  innards.front().first = current_location_;
   std::deque<ends>::const_iterator meh = to_prepend.end();
   while (meh!=to_prepend.begin()) {
     push_front(*meh);
-    ++meh;
+    --meh;
   }
+  reset();
 }
 
-void dna_string::push_ends_back(ends const & to_push)
-{
-  push_back(to_push);
+void dna_string::push_ends_back(ends const & to_push) {
+  this->push_back(to_push);
 }
 
-void dna_string::push_back(char const & to_push)
+void dna_string::push_back(char const to_push)
 {
-  switch (to_push) {
-  case 'I':
-    push_back(eI);
-    break;
-  case 'C':
-    push_back(eC);
-    break;
-  case 'F':
-    push_back(eF);
-    break;
-  case 'P':
-    push_back(eP);
-    break;
-  }
+  push_back(ends(&to_push, &to_push));
 }
 
 void dna_string::substr_from(location const & from, dna_string & to_copy_to)
 {
   location seeker(from);
-  while (seeker.first!=current_index_ && seeker.second!=current_location_) {
+  while (seeker.first<current_index_) {
     to_copy_to.push_back(ends(seeker.second, innards[from.first].second));
-    seeker = location(1+from.first, innards[1+from.first].first);
+    size_t next_index(seeker.first + 1);
+    seeker = location(next_index, innards[next_index].first);
   }
+  to_copy_to.push_back(ends(innards[current_index_].first, current_location_));
 }
 
-unsigned int const dna_string::length() const {
-  unsigned int to_return(0);
-  for (size_t s(0); s < innards.size(); ++s) {
-    to_return += (innards[s].second - innards[s].first);
+unsigned int const dna_string::remaining_length() const {
+  //find length from current_position_ to end 
+  unsigned int to_return(innards[current_index_].second - current_location_);
+  ++to_return;
+  size_t current_index_copy(current_index_ + 1);
+  while (current_index_copy < innards.size()) {
+    to_return += (innards[current_index_copy].second - innards[current_index_copy].first);
+    ++to_return;
+    ++current_index_copy;
   }
-  return to_return + innards.size();
+  return to_return;
 }
 
 void dna_string::skip_to_first(const char * needle, size_t const length_of_needle)
