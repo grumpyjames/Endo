@@ -90,7 +90,6 @@ class dna_string {
   std::deque<ends>::const_iterator end() const { return innards.end(); }
  private:
   void reset() {
-    std::cout << "Resetting position to front of innards" << '\n';
     current_index_ = 0;
     current_location_ = innards.front().first;
   }

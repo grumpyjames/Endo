@@ -734,6 +734,8 @@ void match_replace(dna_string & dna, dna_pattern & to_match, dna_template & to_r
       break;
     }
   }
+  std::cout << "env[0] has length " << env[0].remaining_length() << '\n';
+  std::cout << "env[1] has length " << env[1].remaining_length() << '\n';
   replace(dna, env, to_replace);
 }
 
@@ -839,18 +841,17 @@ void test_dna_substr_from() {
   dna_string to_substr_to;
   location from(0, twelve+5);
   dna+=20;
-  std::cout << "dna length is now " << dna.remaining_length() << '\n';
   assert(dna.remaining_length()==13);
   dna.substr_from(from, to_substr_to);
-  std::cout << "remaining length is " << to_substr_to.remaining_length() << '\n';
   assert(to_substr_to.remaining_length()==16);
+  std::cout << "substr from appears to work" << '\n';
 }
 
 void test_dna_string() {
   test_dna_string_remaining_length();
   test_dna_string_push_to_and_get();
   test_dna_substr_from();
-  assert(false);
+  std::cout << "Tests all passed" << '\n' << '\n';
 }
 
 void alt_main(dna_string dna)
