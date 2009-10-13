@@ -31,7 +31,7 @@ void dna_string::substr_from(location const & from, dna_string & to_copy_to)
   std::cout << "current index is " << current_index_ << '\n';
   std::cout << "innards size is " << innards.size() << '\n';
   while (seeker.first<current_index_) {
-    to_copy_to.push_back(ends(seeker.second, innards[from.first].second));
+    to_copy_to.push_back(ends(seeker.second, innards[seeker.first].second));
     size_t next_index(seeker.first + 1);
     seeker = location(next_index, innards[next_index].first);
   }
