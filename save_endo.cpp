@@ -788,8 +788,72 @@ char * match_replace(char * & dna, dna_pattern & to_match, dna_template & to_rep
   return replace(dna, to_replace, env);
 }
 
+void test_dna_string_remaining_length() {
+  char const * ten = "0123456789";
+  ends eight(ten, ten+7); //this is EIGHT chars
+  ends two(ten+8,ten+9); //this is TWO chars
+  dna_string to_test;
+  to_test.push_back(eight);
+  assert(to_test.remaining_length()==8);
+  ++to_test;
+  assert(to_test.remaining_length()==7);
+  to_test+=4;
+  assert(to_test.remaining_length()==3);
+  to_test.push_back(two);
+  assert(to_test.remaining_length()==5);
+  std::cout << "dna string length works correctly" << '\n';
+}
+
+void test_dna_string_push_to_and_get() {
+  char const * moo = "IFPIIPFIFPCIFPIPCCIFPICIPIFPIP";
+  ends const allinone(moo, moo+29);
+  dna_string to_test,rna;
+  to_test.push_back(allinone);
+  to_test.push_to(rna, 8);
+  assert(rna.remaining_length()==8);
+  assert(to_test.remaining_length()==22);
+  assert(rna.get()=='I');
+  rna+=7;
+  assert(rna.get()=='I');
+  assert(to_test.get()=='F');
+  to_test+=1;
+  assert(to_test.get()=='P');
+  to_test.push_to(rna, 8);
+  assert(rna.remaining_length()==9);
+  assert(to_test.remaining_length()==13);
+  std::cout << "Push to and get seem to work correctly" << '\n';
+}
+
+void test_dna_substr_from() {
+  char const * twelve = "012345678912";
+  char const * one = "A";
+  char const * twenty = "BCDEFGHIJKLMNOPQRSTU";
+  ends uno(twelve, twelve+11);
+  ends dos(one, one);
+  ends treise(twenty, twenty+19);
+  dna_string dna;
+  dna.push_back(uno);
+  dna.push_back(dos);
+  dna.push_back(treise);
+  assert(dna.remaining_length()==33);
+  dna_string to_substr_to;
+  location from(0, twelve+5);
+  dna+=20;
+  dna.substr_from(from, to_substr_to);
+  std::cout << "remaining length is " << to_substr_to.remaining_length() << '\n';
+  assert(to_substr_to.remaining_length()==16);
+}
+
+void test_dna_string() {
+  test_dna_string_remaining_length();
+  test_dna_string_push_to_and_get();
+  test_dna_substr_from();
+  assert(false);
+}
+
 void alt_main(dna_string dna)
 {
+  test_dna_string();
   std::cout << "Made it to alt main: dna string is this long: " << dna.remaining_length() << '\n';
   dna_string rna;
   dna_pattern our_pattern;

@@ -71,7 +71,7 @@ class dna_string {
   void push_to(dna_string & rna, size_t const no_of_chars) {
     if (current_location_+no_of_chars-1 <= innards[current_index_].second) {
       rna.push_back(ends(current_location_,current_location_+no_of_chars-1));
-      current_location_+=(no_of_chars-1);
+      (*this)+=no_of_chars;
     }
     else {
       rna.push_back(ends(current_location_,innards[current_index_].second));
