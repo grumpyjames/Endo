@@ -27,8 +27,8 @@ class dna_string {
       current_location_+=to_add;
     }
     else {
-      size_t moved = innards[current_index_].second - current_location_;
-      current_location_ = innards[++current_index_].second;
+      size_t moved = 1 + innards[current_index_].second - current_location_;
+      current_location_ = innards[++current_index_].first;
       (*this)+=(to_add - moved);
     }
   }

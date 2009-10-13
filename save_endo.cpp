@@ -839,6 +839,8 @@ void test_dna_substr_from() {
   dna_string to_substr_to;
   location from(0, twelve+5);
   dna+=20;
+  std::cout << "dna length is now " << dna.remaining_length() << '\n';
+  assert(dna.remaining_length()==13);
   dna.substr_from(from, to_substr_to);
   std::cout << "remaining length is " << to_substr_to.remaining_length() << '\n';
   assert(to_substr_to.remaining_length()==16);
