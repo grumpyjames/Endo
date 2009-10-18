@@ -66,12 +66,12 @@ void dna_string::skip_to_first(const char * needle, size_t const length_of_needl
     bool const match_found(get() == needle_piece);
     if (match_found) {
       if (!matching) {
-	potential_match.first = current_index_;
-	potential_match.second = current_location_;
+	save_position(potential_match);
 	matching = true;
       }
       ++substring_index;
       if (substring_index == length_of_needle) {
+	++(*this); //we want the first position *after* the match
 	return;
       }
       //we're done!

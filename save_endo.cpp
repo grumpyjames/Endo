@@ -686,7 +686,6 @@ void replace(dna_string & dna, std::deque<dna_string> & env, dna_template & to_r
       }
       break;
     case template_piece::SINGLE_BASE: //lone base
-      std::cout << to_replace[i].base();
       r.push_back(to_replace[i].base()); //FIXME UGH! Do something about this.
       break;
     }
@@ -729,10 +728,13 @@ void match_replace(dna_string & dna, dna_pattern & to_match, dna_template & to_r
 	break;
       }
     case pattern_piece::SINGLE_BASE: //I C F or P
-      if (to_match[s].base()==dna.get())
+      if (to_match[s].base()==dna.get()) {
 	++dna;
-      else
-	throw "No Match";
+      } else {
+	std::cout << "Match not found!" << '\n';
+	dna.load_position(start_location);
+	return;
+      }
       break;
     }
   }
@@ -847,10 +849,20 @@ void test_dna_substr_from() {
   std::cout << "substr from appears to work" << '\n';
 }
 
+void test_dna_string_search() {
+  dna_string dna;
+  char const * moo = "0123456789ACRANAC";
+  ends const mookery(moo, moo+16);
+  dna.push_back(mookery);
+  dna.skip_to_first("ACRA", 4);
+  assert(dna.remaining_length()==3);
+}
+
 void test_dna_string() {
   test_dna_string_remaining_length();
   test_dna_string_push_to_and_get();
   test_dna_substr_from();
+  test_dna_string_search();
   std::cout << "Tests all passed" << '\n' << '\n';
 }
 
@@ -858,8 +870,8 @@ void alt_main(dna_string dna)
 {
   test_dna_string();
   dna_string rna;
-  for (size_t i(0); i < 10; ++i) {
-    std::cout << "Made it to alt main: dna string is this long: " << dna.remaining_length() << '\n';
+  for (size_t i(0); i < 5; ++i) {
+    std::cout << "Iteration " << i << " dna string is this long: " << dna.remaining_length() << '\n';
     dna_pattern our_pattern;
     pattern(dna, rna, our_pattern);
     display(our_pattern);
@@ -868,9 +880,10 @@ void alt_main(dna_string dna)
     display(our_template);
     match_replace(dna, our_pattern, our_template);
     std::cout << "Remaining dna length is " << dna.remaining_length() << '\n';
-    std::cout << "RNA length is " << rna.remaining_length() << '\n';
+    std::cout << "RNA length is " << rna.remaining_length() << '\n' << '\n' << '\n';
   }
   std::cout << "Leaving alt main" << '\n';
+  assert(false);
 }
 
 int main(int argc, char* argv[])
