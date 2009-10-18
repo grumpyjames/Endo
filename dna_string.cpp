@@ -12,10 +12,12 @@ void dna_string::prepend(dna_string const & to_prepend)
   for (size_t s(0); s<current_index_; ++s)
     innards.pop_front();
   innards.front().first = current_location_;
-  std::deque<ends>::const_iterator meh = to_prepend.end();
-  while (--meh!=to_prepend.begin()) {
+  std::deque<ends>::const_iterator meh = to_prepend.end() - 1;
+  while (meh!=to_prepend.begin()) {
     push_front(*meh);
+    --meh;
   }
+  push_front(*meh);
   reset();
 }
 

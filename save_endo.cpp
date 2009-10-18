@@ -736,8 +736,6 @@ void match_replace(dna_string & dna, dna_pattern & to_match, dna_template & to_r
       break;
     }
   }
-  std::cout << "env[0] has length " << env[0].remaining_length() << '\n';
-  std::cout << "env[1] has length " << env[1].remaining_length() << '\n';
   replace(dna, env, to_replace);
 }
 
@@ -859,17 +857,19 @@ void test_dna_string() {
 void alt_main(dna_string dna)
 {
   test_dna_string();
-  std::cout << "Made it to alt main: dna string is this long: " << dna.remaining_length() << '\n';
   dna_string rna;
-  dna_pattern our_pattern;
-  pattern(dna, rna, our_pattern);
-  display(our_pattern);
-  dna_template our_template;
-  make_template(dna, rna, our_template);
-  display(our_template);
-  match_replace(dna, our_pattern, our_template);
-  std::cout << "Remaining dna length is " << dna.remaining_length() << '\n';
-  std::cout << "RNA length is " << rna.remaining_length() << '\n';
+  for (size_t i(0); i < 10; ++i) {
+    std::cout << "Made it to alt main: dna string is this long: " << dna.remaining_length() << '\n';
+    dna_pattern our_pattern;
+    pattern(dna, rna, our_pattern);
+    display(our_pattern);
+    dna_template our_template;
+    make_template(dna, rna, our_template);
+    display(our_template);
+    match_replace(dna, our_pattern, our_template);
+    std::cout << "Remaining dna length is " << dna.remaining_length() << '\n';
+    std::cout << "RNA length is " << rna.remaining_length() << '\n';
+  }
   std::cout << "Leaving alt main" << '\n';
 }
 
