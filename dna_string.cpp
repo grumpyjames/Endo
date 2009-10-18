@@ -3,15 +3,18 @@
 #include <functional>
 #include <boost/bind.hpp>
 
+unsigned int const dna_string::innards_size() const {
+  return innards.size();
+}
+
 void dna_string::prepend(dna_string const & to_prepend)
 {
   for (size_t s(0); s<current_index_; ++s)
     innards.pop_front();
   innards.front().first = current_location_;
   std::deque<ends>::const_iterator meh = to_prepend.end();
-  while (meh!=to_prepend.begin()) {
+  while (--meh!=to_prepend.begin()) {
     push_front(*meh);
-    --meh;
   }
   reset();
 }
@@ -33,7 +36,7 @@ void dna_string::substr_from(location const & from, dna_string & to_copy_to)
     size_t next_index(seeker.first + 1);
     seeker = location(next_index, innards[next_index].first);
   }
-  to_copy_to.push_back(ends(innards[current_index_].first, current_location_));
+  to_copy_to.push_back(ends(seeker.second, current_location_ - 1));
 }
 
 unsigned int const dna_string::remaining_length() const {

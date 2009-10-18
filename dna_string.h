@@ -69,7 +69,7 @@ class dna_string {
     current_location_ = to_load_from.second;
   }
   void push_to(dna_string & rna, size_t const no_of_chars) {
-    if (current_location_+no_of_chars-1 <= innards[current_index_].second) {
+    if (current_location_+no_of_chars <= innards[current_index_].second) {
       rna.push_back(ends(current_location_,current_location_+no_of_chars-1));
       (*this)+=no_of_chars;
     }
@@ -83,6 +83,7 @@ class dna_string {
   void skip_to_first(const char * needle, size_t const length);
   location const current_location() const;
   unsigned int const remaining_length() const;
+  unsigned int const innards_size() const;
   void append(dna_string const & to_push);
   void prepend(dna_string const & to_prepend);
   void push_ends_back(ends const & to_push);

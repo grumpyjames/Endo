@@ -312,7 +312,7 @@ void make_template(dna_string & dna, dna_string & rna, dna_template & result_tem
 	    switch (third) {
 	    case 'I':
 	      {
-		dna.push_to(rna, 8);
+		dna.push_to(rna, 7); //push 7 characters and move to the 8th.
 	      }
 	      break;
 	    case 'P':
@@ -686,10 +686,12 @@ void replace(dna_string & dna, std::deque<dna_string> & env, dna_template & to_r
       }
       break;
     case template_piece::SINGLE_BASE: //lone base
+      std::cout << to_replace[i].base();
       r.push_back(to_replace[i].base()); //FIXME UGH! Do something about this.
       break;
     }
   }
+  std::cout << '\n';
   dna.prepend(r);
 } 
 
@@ -843,7 +845,7 @@ void test_dna_substr_from() {
   dna+=20;
   assert(dna.remaining_length()==13);
   dna.substr_from(from, to_substr_to);
-  assert(to_substr_to.remaining_length()==16);
+  assert(to_substr_to.remaining_length()==15);
   std::cout << "substr from appears to work" << '\n';
 }
 
