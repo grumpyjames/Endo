@@ -856,6 +856,14 @@ void test_dna_string_search() {
   dna.push_back(mookery);
   dna.skip_to_first("ACRA", 4);
   assert(dna.remaining_length()==3);
+  char const * moo2 = "RA4726387ACRA122";
+  ends const rookery(moo2, moo2+15);
+  dna.push_back(rookery);
+  dna.skip_to_first("ACRA", 4);
+  assert(dna.remaining_length()==14);
+  dna.skip_to_first("ACRA", 4);
+  assert(dna.remaining_length()==3);
+  std::cout << "skip to first appears to work" << '\n';
 }
 
 void test_dna_string() {

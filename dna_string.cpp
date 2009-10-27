@@ -58,10 +58,10 @@ void dna_string::skip_to_first(const char * needle, size_t const length_of_needl
 {
   location start_position;
   save_position(start_position);
-  bool found(false),matching(false);
+  bool matching(false);
   size_t substring_index(0);
   location potential_match;
-  while (!found) {
+  while (has_next()) {
     char const needle_piece=needle[substring_index];
     bool const match_found(get() == needle_piece);
     if (match_found) {
@@ -82,6 +82,8 @@ void dna_string::skip_to_first(const char * needle, size_t const length_of_needl
     }
     ++(*this);
   }
+  // No substring found, reset to initial position
+  load_position(start_position);
 }
 
 location const dna_string::current_location() const {
