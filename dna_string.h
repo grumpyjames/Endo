@@ -31,16 +31,7 @@ class dna_string {
     else
       --current_location_; 
   }
-  void operator+=(unsigned int const to_add) {
-    if (current_location_ <= (innards[current_index_].second-to_add)) {
-      current_location_+=to_add;
-    }
-    else {
-      size_t moved = 1 + innards[current_index_].second - current_location_;
-      current_location_ = innards[++current_index_].first;
-      (*this)+=(to_add - moved);
-    }
-  }
+  void operator+=(unsigned int to_add);
   void operator-=(unsigned int const to_subtract) {
     if (current_location_ >= (innards[current_index_].first+to_subtract)) {
       current_location_-=to_subtract;
@@ -105,6 +96,7 @@ class dna_string {
     current_index_ = 0;
     current_location_ = innards.front().first;
   }
+  unsigned int move(unsigned int count);
   std::deque<ends> innards;
   size_t current_index_;
   char const * current_location_;

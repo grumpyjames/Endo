@@ -892,7 +892,7 @@ void alt_main(dna_string dna)
 {
   test_dna_string();
   dna_string rna;
-  for (size_t i(0); i < 5; ++i) {
+  for (size_t i(0); i < 100; ++i) {
     std::cout << "Iteration " << i << " dna string is this long: " << dna.remaining_length() << '\n';
     dna_pattern our_pattern;
     pattern(dna, rna, our_pattern);

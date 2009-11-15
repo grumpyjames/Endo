@@ -126,3 +126,19 @@ void dna_string::append(dna_string const & to_append)
   for_each(to_append.begin(), to_append.end(), boost::bind(&dna_string::push_ends_back, this, _1));
 }
 
+unsigned int dna_string::move(unsigned int desired_distance) {
+  if (innards[current_index_].second >= current_location_ + desired_distance) {
+    current_location_+=desired_distance;
+    return desired_distance;
+  } else {
+    unsigned int will_move = innards[current_index_].second - current_location_ + 1;
+    current_location_ = innards[++current_index_].first;
+    return will_move;
+  }
+}
+
+void dna_string::operator+=(unsigned int to_add) {
+  //FIXME what if to_add is > remaining length?
+  while (to_add > 0)
+    to_add -= move(to_add);
+}
