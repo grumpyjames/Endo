@@ -1,15 +1,24 @@
+#ifndef DNA_STRING_H_G
+#define DNA_STRING_H_G
+
 #include <deque>
 #include <utility>
 #include <cstring>
 #include <iostream>
 
-typedef std::pair<char const *, char const *> ends;
 typedef std::pair<size_t, char const *> location;
+
+class ends {
+ public:
+  explicit ends(char const * s, char const * e);
+  char const * first;
+  char const * second;
+};
 
 class dna_string {
  public: 
- dna_string() : innards(),current_index_(0) {}
- dna_string(std::deque<ends> initial_innards) : innards(initial_innards) { reset();} 
+  dna_string();
+  dna_string(std::deque<ends> initial_innards);
   void operator++() {
     if (current_location_ == innards[current_index_].second)
       current_location_ = innards[++current_index_].first;
@@ -44,7 +53,7 @@ class dna_string {
   }
   char const * beginning() { return innards.front().first; }
   char const * end() { return innards.back().second; }
-  char const & get() { return *current_location_; }
+  char const & get() const;
   char const * get_char_ptr() { return current_location_; }
   bool const has_next() { return !(current_location_==end()); }
   void substr_from(location const & from, dna_string & target);
@@ -54,7 +63,7 @@ class dna_string {
       reset();
     }
   }
-  void push_back(char const to_push);
+  void push_back(char const & to_push);
   void push_front(ends const & to_push) { innards.push_front(to_push); }
   void skip_to_first(char const & to_find) {
     while (has_next() && *current_location_!=to_find)
@@ -89,6 +98,8 @@ class dna_string {
   void push_ends_back(ends const & to_push);
   std::deque<ends>::const_iterator begin() const { return innards.begin(); }
   std::deque<ends>::const_iterator end() const { return innards.end(); }
+  std::deque<ends>::const_reverse_iterator rbegin() const { return innards.rbegin(); }
+  std::deque<ends>::const_reverse_iterator rend() const { return innards.rend(); }
  private:
   void reset() {
     current_index_ = 0;
@@ -98,3 +109,5 @@ class dna_string {
   size_t current_index_;
   char const * current_location_;
 };
+
+#endif

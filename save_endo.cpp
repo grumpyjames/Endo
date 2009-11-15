@@ -11,8 +11,17 @@
 #include "time.h"
 #include "dna_string.h"
 #include <math.h>
+#include <boost/optional.hpp>
+
 using std::string;
 using std::ifstream;
+
+char const I('I');
+char const C('C');
+char const F('F');
+char const P('P');
+char const OPEN('(');
+char const CLOSE(')');
 
 namespace {
   double one_over_ln_2(1/(log(2.0f)));
@@ -32,8 +41,8 @@ public:
     BRACE_CLOSE
   };
   pattern_piece(unsigned int const skip_length) : type_(SKIP), skip_length_(skip_length){}
-  pattern_piece(char const base) { 
-    if (base != '(' && base != ')') {
+  pattern_piece(char const & base) { 
+    if (base != OPEN && base != CLOSE) {
       type_ = SINGLE_BASE;
       base_ = base;
     }
@@ -47,13 +56,13 @@ public:
   pattern_piece(string const & search_term) : type_(FIND), search_term_(search_term){} 
   size_t const & type() { return type_; }
   unsigned int const & skip_length() { return skip_length_;}
-  char const & base() { return base_; }
+  char const & base() { return *base_; }
   string const & search_term() { return search_term_; }
   string const to_s();
 private:
   size_t type_;
   //FIXME make these optional?
-  char base_;
+  boost::optional<char> base_;
   unsigned int skip_length_;
   string search_term_;
 };
@@ -78,7 +87,7 @@ string const pattern_piece::to_s() {
   case SINGLE_BASE:
     {
       string to_return("");
-      to_return.push_back(base_);
+      to_return.push_back(*base_);
       return to_return;
       break;
     }
@@ -114,24 +123,28 @@ public:
   enum template_piece_type { SINGLE_BASE, N, N_L };
   template_piece(unsigned int n) : type_(N), n_(n) {}
   template_piece(unsigned int n, unsigned int l) : type_(N_L), n_(n), l_(l) {}
-  template_piece(char base) : type_(SINGLE_BASE), base_(base) {}
+  template_piece(char const & base) : type_(SINGLE_BASE), base_(base) {}
   size_t const & type() { return type_;}
   unsigned int & n() { return n_; }
   unsigned int & l() { return l_; }
-  char & base() { return base_; }
+  char const & base();
   string to_s();
 private:
   size_t const type_;
   unsigned int n_, l_;
-  char base_;
+  boost::optional<char> const base_;
 };
+
+char const & template_piece::base() {
+  return *base_;
+}
 
 string template_piece::to_s() {
   switch (type()) {
   case SINGLE_BASE:
     { 
       string to_return;
-      to_return.push_back(base_);
+      to_return.push_back(*base_);
       return to_return;
     }
   case N_L:
@@ -234,16 +247,16 @@ void nrcconsts(dna_string & dna, string & to_write_to) {
 	return;
       }
       else {
-	to_write_to.push_back('P');
+	to_write_to.push_back(P);
       }
     }
     else {
       if (first=='C')
-	to_write_to.push_back('I');
+	to_write_to.push_back(I);
       else if (first=='F')
-	to_write_to.push_back('C');
+	to_write_to.push_back(C);
       else if (first=='P')
-	to_write_to.push_back('F');
+	to_write_to.push_back(F);
     }
     last_char = first;
   }
@@ -284,20 +297,20 @@ void make_template(dna_string & dna, dna_string & rna, dna_template & result_tem
     ++dna;
     switch (first) {
     case 'C':
-      result_template.push_back(template_piece('I'));
+      result_template.push_back(template_piece(I));
       break;
     case 'F':
-      result_template.push_back(template_piece('C'));
+      result_template.push_back(template_piece(C));
       break;
     case 'P':
-      result_template.push_back(template_piece('F'));
+      result_template.push_back(template_piece(F));
       break;
     case 'I':
       char const second = dna.get();
       ++dna;
       switch (second) {
       case 'C':
-	result_template.push_back(template_piece('P'));
+	result_template.push_back(template_piece(P));
 	break;
       default:
 	{
@@ -342,20 +355,20 @@ void cmake_template(char *& dna, string & rna, dna_template & result_template)
     ++dna;
     switch (first) {
     case 'C':
-      result_template.push_back(template_piece('I'));
+      result_template.push_back(template_piece(I));
       break;
     case 'F':
-      result_template.push_back(template_piece('C'));
+      result_template.push_back(template_piece(C));
       break;
     case 'P':
-      result_template.push_back(template_piece('F'));
+      result_template.push_back(template_piece(F));
       break;
     case 'I':
       char second = dna[0];
       ++dna;
       switch (second) {
       case 'C':
-	result_template.push_back(template_piece('P'));
+	result_template.push_back(template_piece(P));
 	break;
       default:
 	{
@@ -400,20 +413,20 @@ void pattern(dna_string & dna, dna_string & rna, dna_pattern & result_pattern)
     ++dna;
     switch (first) {
     case 'C':
-      result_pattern.push_back(pattern_piece('I'));
+      result_pattern.push_back(pattern_piece(I));
       break;
     case 'F':
-      result_pattern.push_back(pattern_piece('C'));
+      result_pattern.push_back(pattern_piece(C));
       break;
     case 'P':
-      result_pattern.push_back(pattern_piece('F'));
+      result_pattern.push_back(pattern_piece(F));
       break;
     case 'I':
       char const second = dna.get();
       ++dna;
       switch (second) {
       case 'C':
-	result_pattern.push_back(pattern_piece('P'));
+	result_pattern.push_back(pattern_piece(P));
 	break;
       case 'F':
 	{
@@ -434,7 +447,7 @@ void pattern(dna_string & dna, dna_string & rna, dna_pattern & result_pattern)
 	switch (third) {
 	case 'P':
 	  ++level;
-	  result_pattern.push_back(pattern_piece('('));
+	  result_pattern.push_back(pattern_piece(OPEN));
 	  break;
 	case 'I':
 	  dna.push_to(rna, 7);
@@ -442,7 +455,7 @@ void pattern(dna_string & dna, dna_string & rna, dna_pattern & result_pattern)
 	default: //C or F yield the same
 	  if (level > 0) {
 	    --level;
-	    result_pattern.push_back(pattern_piece(')'));
+	    result_pattern.push_back(pattern_piece(CLOSE));
 	  }
 	  else {
 	    return;
@@ -468,20 +481,20 @@ void pattern(char *& dna, string & rna, dna_pattern & result_pattern)
     ++dna;
     switch (first) {
     case 'C':
-      result_pattern.push_back(pattern_piece('I'));
+      result_pattern.push_back(pattern_piece(I));
       break;
     case 'F':
-      result_pattern.push_back(pattern_piece('C'));
+      result_pattern.push_back(pattern_piece(C));
       break;
     case 'P':
-      result_pattern.push_back(pattern_piece('F'));
+      result_pattern.push_back(pattern_piece(F));
       break;
     case 'I':
       char second = dna[0];
       ++dna;
       switch (second) {
       case 'C':
-	result_pattern.push_back(pattern_piece('P'));
+	result_pattern.push_back(pattern_piece(P));
 	break;
       case 'F':
 	{
@@ -502,7 +515,7 @@ void pattern(char *& dna, string & rna, dna_pattern & result_pattern)
 	switch (third) {
 	case 'P':
 	  ++level;
-	  result_pattern.push_back(pattern_piece('('));
+	  result_pattern.push_back(pattern_piece(OPEN));
 	  break;
 	case 'I':
 	  cpush_dna_to_rna(dna, rna);
@@ -510,7 +523,7 @@ void pattern(char *& dna, string & rna, dna_pattern & result_pattern)
 	default: //C or F yield the same
 	  if (level > 0) {
 	    --level;
-	    result_pattern.push_back(pattern_piece(')'));
+	    result_pattern.push_back(pattern_piece(CLOSE));
 	  }
 	  else {
 	    return;
@@ -715,6 +728,7 @@ void match_replace(dna_string & dna, dna_pattern & to_match, dna_template & to_r
 	  return;
 	}
       }
+      break;
     case pattern_piece::BRACE_OPEN:
       c.push_front(dna.current_location());
       break;
@@ -851,7 +865,7 @@ void test_dna_substr_from() {
 
 void test_dna_string_search() {
   dna_string dna;
-  char const * moo = "0123456789ACRANAC";
+  char const * moo = "01AC45RA89ACRANAC";
   ends const mookery(moo, moo+16);
   dna.push_back(mookery);
   dna.skip_to_first("ACRA", 4);

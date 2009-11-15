@@ -3,6 +3,26 @@
 #include <functional>
 #include <boost/bind.hpp>
 
+
+ends::ends(char const * s, char const * e)
+: first(s), second(e) {
+  if (second < first)
+    std::cerr << "ARGH" << '\n';
+}
+
+
+dna_string::dna_string()
+  : current_index_(0)
+{
+  
+}
+
+dna_string::dna_string(std::deque<ends> initial_innards) 
+: innards(initial_innards)
+{
+  reset();
+}
+
 unsigned int const dna_string::innards_size() const {
   return innards.size();
 }
@@ -12,22 +32,24 @@ void dna_string::prepend(dna_string const & to_prepend)
   for (size_t s(0); s<current_index_; ++s)
     innards.pop_front();
   innards.front().first = current_location_;
-  std::deque<ends>::const_iterator meh = to_prepend.end() - 1;
-  while (meh!=to_prepend.begin()) {
+  std::deque<ends>::const_reverse_iterator meh = to_prepend.rbegin();
+  while (meh!=to_prepend.rend()) {
     push_front(*meh);
-    --meh;
+    ++meh;
   }
-  push_front(*meh);
   reset();
 }
 
 void dna_string::push_ends_back(ends const & to_push) {
+  if (to_push.second < to_push.first)
+    std::cerr << "ARARGHAGRHARGH" << '\n';
   this->push_back(to_push);
 }
 
-void dna_string::push_back(char const to_push)
+void dna_string::push_back(char const & to_push)
 {
-  push_back(ends(&to_push, &to_push));
+  char const * icfp = &to_push; 
+  push_ends_back(ends(icfp,icfp));
 }
 
 void dna_string::substr_from(location const & from, dna_string & to_copy_to)
@@ -38,6 +60,8 @@ void dna_string::substr_from(location const & from, dna_string & to_copy_to)
     size_t next_index(seeker.first + 1);
     seeker = location(next_index, innards[next_index].first);
   }
+  if (seeker.second==current_location_)
+    return;
   to_copy_to.push_back(ends(seeker.second, current_location_ - 1));
 }
 
@@ -52,6 +76,10 @@ unsigned int const dna_string::remaining_length() const {
     ++current_index_copy;
   }
   return to_return;
+}
+
+char const & dna_string::get() const {
+  return *current_location_;
 }
 
 void dna_string::skip_to_first(const char * needle, size_t const length_of_needle)
@@ -70,6 +98,8 @@ void dna_string::skip_to_first(const char * needle, size_t const length_of_needl
 	matching = true;
       }
       ++substring_index;
+      //if (substring_index > 4)
+      //std::cerr << substring_index << '\n';
       if (substring_index == length_of_needle) {
 	++(*this); //we want the first position *after* the match
 	return;
@@ -79,6 +109,7 @@ void dna_string::skip_to_first(const char * needle, size_t const length_of_needl
     else if (matching) {
 	load_position(potential_match);
 	matching = !matching;
+	substring_index = 0;
     }
     ++(*this);
   }
@@ -94,3 +125,4 @@ void dna_string::append(dna_string const & to_append)
 {
   for_each(to_append.begin(), to_append.end(), boost::bind(&dna_string::push_ends_back, this, _1));
 }
+
