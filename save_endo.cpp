@@ -163,6 +163,11 @@ string template_piece::to_s() {
       out << "|" << n_ << "|";
       return out.str();
     }
+  case DNA_STRING:
+    {
+      //FIXME dangerous
+      return std::string((*ends_).first);
+    }
   }
   throw ("sigh");
 }
@@ -181,9 +186,10 @@ void display(dna_template & a_template)
 
 class template_builder {
 public:
-  template_builder() : under_construction_(new dna_template) {}
+  template_builder() : flushable(false),under_construction_(new dna_template) {}
   void operator<<(char const single_base) {
     ss_ << single_base;
+    flushable = true;
   }
   void operator<<(unsigned int n) {
     flush();
@@ -193,10 +199,13 @@ public:
     flush();
     under_construction_->push_back(template_piece(n_l.first, n_l.second));
   }
-  boost::shared_ptr<dna_template> to_template() { return under_construction_; }
+  boost::shared_ptr<dna_template> to_template() { flush(); return under_construction_; }
 private:
   //call this whenever a string of single bases ends.
+  bool flushable;
   void flush() {
+    if (!flushable)
+      return;
     //FIXME this isn't terrifically efficient.
     std::string to_char_shortly = ss_.str();
     size_t dna_string_length = to_char_shortly.length();
@@ -269,34 +278,35 @@ void nrcconsts(dna_string & dna, string & to_write_to) {
 }
 
 //FIXME do not add single bases, add strings of them. 
-void make_template(dna_string & dna, dna_string & rna, dna_template & result_template)
+boost::shared_ptr<dna_template> make_template(dna_string & dna, dna_string & rna)
 {
+  template_builder tb;
   while (dna.has_next()) {
     char const first = dna.get();
     ++dna;
     switch (first) {
     case 'C':
-      result_template.push_back(template_piece(I));
+      tb << 'I';
       break;
     case 'F':
-      result_template.push_back(template_piece(C));
+      tb << 'C';
       break;
     case 'P':
-      result_template.push_back(template_piece(F));
+      tb << 'F';
       break;
     case 'I':
       char const second = dna.get();
       ++dna;
       switch (second) {
       case 'C':
-	result_template.push_back(template_piece(P));
+	tb << 'P';
 	break;
       default:
 	{
 	  if (second=='F' || second=='P') {
 	    unsigned int l = nrcinty_nat(dna);
 	    unsigned int n = nrcinty_nat(dna);
-	    result_template.push_back(template_piece(n,l));
+	    tb << std::pair<unsigned int, unsigned int>(n, l);
 	  }
 	  else { //char=='I'
 	    char const third = dna.get();
@@ -309,11 +319,11 @@ void make_template(dna_string & dna, dna_string & rna, dna_template & result_tem
 	      break;
 	    case 'P':
 	      {
-		result_template.push_back(template_piece(nrcinty_nat(dna)));
+		tb << nrcinty_nat(dna);
 	      }
 	      break;
 	    default: //C or F
-	      return;
+	      return tb.to_template();
 	    }
 	  }
 	  break;
@@ -622,10 +632,9 @@ void alt_main(dna_string dna)
     dna_pattern our_pattern;
     pattern(dna, rna, our_pattern);
     display(our_pattern);
-    dna_template our_template;
-    make_template(dna, rna, our_template);
-    display(our_template);
-    match_replace(dna, our_pattern, our_template);
+    boost::shared_ptr<dna_template> our_template = make_template(dna, rna);
+    display(*our_template);
+    match_replace(dna, our_pattern, *our_template);
     std::cout << "Remaining dna length is " << dna.remaining_length() << '\n';
     std::cout << "RNA length is " << rna.remaining_length() << '\n' << '\n' << '\n';
   }
