@@ -1,5 +1,5 @@
 This particular piece of code is, currently, fairly horrible. It also doesn't obey the specification given in the problem precisely - it does get pretty near though.
 
-build with: g++ -Wall -I/path/to/boost -g *.cpp
+build with: make -j4
 
 Requires endo dna to be in the same directory, or will segfault
