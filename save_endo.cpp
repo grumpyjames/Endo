@@ -62,9 +62,9 @@ public:
   string const & search_term() { return search_term_; }
   string const to_s();
 private:
-  size_t type_;
-  //FIXME make these optional?
   boost::optional<char> base_;
+  //FIXME make these optional?
+  size_t type_;
   unsigned int skip_length_;
   string search_term_;
 };
@@ -73,7 +73,7 @@ string const pattern_piece::to_s() {
   switch (this->type_) {
   case SKIP:
     {
-      std::stringstream out; //FIXME build/include boost and use lexical_cast?
+      std::stringstream out;
       out << "!";
       out << skip_length();
       return out.str();
@@ -121,45 +121,32 @@ void display(dna_pattern & a_pattern)
 
 class template_piece {
 public:
-  enum template_piece_type { SINGLE_BASE, N, N_L, DNA_STRING };
+  enum template_piece_type { N, N_L, DNA_STRING };
   template_piece(unsigned int n) : type_(N), n_(n) {}
   template_piece(unsigned int n, unsigned int l) : type_(N_L), n_(n), l_(l) {}
-  template_piece(char const & base) : type_(SINGLE_BASE), base_(base) {}
   template_piece(ends const & e) : type_(DNA_STRING), ends_(e) {}
   size_t const & type() { return type_;}
   unsigned int & n() { return n_; }
   unsigned int & l() { return l_; }
-  char const & base();
   ends const & dna_s() { return *ends_; }
   string to_s();
 private:
   size_t const type_;
   unsigned int n_, l_;
-  boost::optional<char> const base_;
   boost::optional<ends> const ends_;
 };
 
-char const & template_piece::base() {
-  return *base_;
-}
-
 string template_piece::to_s() {
   switch (type()) {
-  case SINGLE_BASE:
-    { 
-      string to_return;
-      to_return.push_back(*base_);
-      return to_return;
-    }
   case N_L:
     {
-      std::stringstream out; //FIXME build/include boost and use lexical_cast?
+      std::stringstream out;
       out << "[" << n_ << "," << l_ << "]";
       return out.str();
     }
   case N:
     {
-      std::stringstream out; //FIXME build/include boost and use lexical_cast?
+      std::stringstream out;
       out << "|" << n_ << "|";
       return out.str();
     }
@@ -277,7 +264,6 @@ void nrcconsts(dna_string & dna, string & to_write_to) {
   }
 }
 
-//FIXME do not add single bases, add strings of them. 
 boost::shared_ptr<dna_template> make_template(dna_string & dna, dna_string & rna)
 {
   template_builder tb;
@@ -483,9 +469,6 @@ void replace(dna_string & dna, std::deque<dna_string> & env, dna_template & to_r
       {
 	r.push_back(to_replace[i].dna_s());
       }
-      break;
-    case template_piece::SINGLE_BASE: //lone base
-      r.push_back(to_replace[i].base()); //FIXME UGH! Do something about this.
       break;
     }
   }
