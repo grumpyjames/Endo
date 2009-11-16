@@ -6,6 +6,7 @@
 #include <sstream>
 #include <cmath>
 #include <deque>
+#include <vector>
 #include <list>
 #include <utility>
 #include "time.h"
@@ -466,6 +467,11 @@ void replace(dna_string & dna, std::deque<dna_string> & env, dna_template & to_r
 	asnat(env[n].remaining_length(), to_append);
 	ends some_ends(beginning, to_append);
       	r.push_back(some_ends);
+      }
+      break;
+    case template_piece::DNA_STRING:
+      {
+	r.push_back(to_replace[i].dna_s());
       }
       break;
     case template_piece::SINGLE_BASE: //lone base
