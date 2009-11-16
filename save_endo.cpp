@@ -12,6 +12,7 @@
 #include "dna_string.h"
 #include <math.h>
 #include <boost/optional.hpp>
+#include <boost/shared_ptr.hpp>
 
 using std::string;
 using std::ifstream;
@@ -105,6 +106,7 @@ string const pattern_piece::to_s() {
   return "dgnlskrnr";
 }
 
+//FIXME does this really need to be a deque?
 typedef std::deque<pattern_piece> dna_pattern;
 
 void display(dna_pattern & a_pattern)
@@ -127,7 +129,7 @@ public:
   unsigned int & n() { return n_; }
   unsigned int & l() { return l_; }
   char const & base();
-  ends const & ends() { return *ends_; }
+  ends const & dna_s() { return *ends_; }
   string to_s();
 private:
   size_t const type_;
@@ -135,19 +137,6 @@ private:
   boost::optional<char> const base_;
   boost::optional<ends> const ends_;
 };
-
-//FIXME Implement!
-class template_builder {
-public:
-  void operator<<(char const single_base);
-  void n_l(unsigned int n, unsigned int l);
-  void n(unsigned int n);
-  dna_template to_template();
-private:
-  //call this whenever a string of single bases ends.
-  void flush();
-  //FIXME this will obviously need state
-}
 
 char const & template_piece::base() {
   return *base_;
@@ -177,6 +166,7 @@ string template_piece::to_s() {
   throw ("sigh");
 }
 
+//FIXME Again, should this be a deque?
 typedef std::deque<template_piece> dna_template;
 
 void display(dna_template & a_template)
@@ -187,6 +177,36 @@ void display(dna_template & a_template)
   }
   std::cout << '\n';
 }
+
+class template_builder {
+public:
+  template_builder() : under_construction_(new dna_template) {}
+  void operator<<(char const single_base) {
+    ss_ << single_base;
+  }
+  void operator<<(unsigned int n) {
+    flush();
+    under_construction_->push_back(template_piece(n));
+  }
+  void operator<<(std::pair<unsigned int, unsigned int> const n_l) {
+    flush();
+    under_construction_->push_back(template_piece(n_l.first, n_l.second));
+  }
+  boost::shared_ptr<dna_template> to_template() { return under_construction_; }
+private:
+  //call this whenever a string of single bases ends.
+  void flush() {
+    //FIXME this isn't terrifically efficient.
+    std::string to_char_shortly = ss_.str();
+    size_t dna_string_length = to_char_shortly.length();
+    char * almost_there = new char[dna_string_length];
+    memcpy(almost_there, to_char_shortly.c_str(), dna_string_length);
+    under_construction_->push_back(template_piece(ends(almost_there, almost_there + (dna_string_length - 1))));
+  }
+  std::stringstream ss_;
+  boost::shared_ptr<dna_template> under_construction_;
+};
+
 
 namespace {
 
