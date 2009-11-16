@@ -6,14 +6,14 @@
 #include <sstream>
 #include <cmath>
 #include <deque>
-#include <vector>
 #include <list>
 #include <utility>
 #include "time.h"
-#include "dna_string.h"
 #include <math.h>
 #include <boost/optional.hpp>
 #include <boost/shared_ptr.hpp>
+
+#include "dna_string.h"
 
 using std::string;
 using std::ifstream;
@@ -166,7 +166,7 @@ string template_piece::to_s() {
   case DNA_STRING:
     {
       //FIXME dangerous
-      return std::string((*ends_).first);
+      return string((*ends_).first);
     }
   }
   throw ("sigh");
@@ -207,7 +207,7 @@ private:
     if (!flushable)
       return;
     //FIXME this isn't terrifically efficient.
-    std::string to_char_shortly = ss_.str();
+    string to_char_shortly = ss_.str();
     size_t dna_string_length = to_char_shortly.length();
     char * almost_there = new char[dna_string_length];
     memcpy(almost_there, to_char_shortly.c_str(), dna_string_length);

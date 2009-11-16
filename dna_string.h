@@ -4,7 +4,6 @@
 #include <deque>
 #include <utility>
 #include <cstring>
-#include <iostream>
 
 typedef std::pair<size_t, char const *> location;
 

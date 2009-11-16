@@ -1,21 +1,16 @@
 #include "dna_string.h"
+
 #include <algorithm>
 #include <functional>
 #include <boost/bind.hpp>
 
 
 ends::ends(char const * s, char const * e)
-: first(s), second(e) {
-  if (second < first)
-    std::cerr << "ARGH" << '\n';
-}
-
+: first(s), second(e) {}
 
 dna_string::dna_string()
   : current_index_(0)
-{
-  
-}
+{}
 
 dna_string::dna_string(std::deque<ends> initial_innards) 
 : innards(initial_innards)
@@ -41,8 +36,6 @@ void dna_string::prepend(dna_string const & to_prepend)
 }
 
 void dna_string::push_ends_back(ends const & to_push) {
-  if (to_push.second < to_push.first)
-    std::cerr << "ARARGHAGRHARGH" << '\n';
   this->push_back(to_push);
 }
 
