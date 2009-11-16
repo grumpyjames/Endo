@@ -118,20 +118,36 @@ void display(dna_pattern & a_pattern)
 
 class template_piece {
 public:
-  enum template_piece_type { SINGLE_BASE, N, N_L };
+  enum template_piece_type { SINGLE_BASE, N, N_L, DNA_STRING };
   template_piece(unsigned int n) : type_(N), n_(n) {}
   template_piece(unsigned int n, unsigned int l) : type_(N_L), n_(n), l_(l) {}
   template_piece(char const & base) : type_(SINGLE_BASE), base_(base) {}
+  template_piece(ends const & e) : type_(DNA_STRING), ends_(e) {}
   size_t const & type() { return type_;}
   unsigned int & n() { return n_; }
   unsigned int & l() { return l_; }
   char const & base();
+  ends const & ends() { return *ends_; }
   string to_s();
 private:
   size_t const type_;
   unsigned int n_, l_;
   boost::optional<char> const base_;
+  boost::optional<ends> const ends_;
 };
+
+//FIXME Implement!
+class template_builder {
+public:
+  void operator<<(char const single_base);
+  void n_l(unsigned int n, unsigned int l);
+  void n(unsigned int n);
+  dna_template to_template();
+private:
+  //call this whenever a string of single bases ends.
+  void flush();
+  //FIXME this will obviously need state
+}
 
 char const & template_piece::base() {
   return *base_;
@@ -231,6 +247,7 @@ void nrcconsts(dna_string & dna, string & to_write_to) {
   }
 }
 
+//FIXME do not add single bases, add strings of them. 
 void make_template(dna_string & dna, dna_string & rna, dna_template & result_template)
 {
   while (dna.has_next()) {
