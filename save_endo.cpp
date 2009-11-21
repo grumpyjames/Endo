@@ -449,9 +449,12 @@ void replace(dna_string & dna, std::deque<dna_string> & env, dna_template & to_r
     switch (to_replace[i].type()) {
     case template_piece::N_L :
       {
-	dna_string to_protect = env[to_replace[i].n()];
-	protect(to_replace[i].l(), to_protect);
-	r.append(to_protect);
+	unsigned int n = to_replace[i].n();
+	if (n < env.size()) {
+	  dna_string to_protect = env[to_replace[i].n()];
+	  protect(to_replace[i].l(), to_protect);
+	  r.append(to_protect);
+	}
       }
       break;
     case template_piece::N :
@@ -486,7 +489,14 @@ void match_replace(dna_string & dna, dna_pattern & to_match, dna_template & to_r
     switch (to_match[s].type()) {
     case pattern_piece::SKIP:
       {
-	dna += (to_match[s].skip_length());
+	unsigned int skip_length = to_match[s].skip_length();
+	if (dna.remaining_length() > skip_length) {
+	  dna += (to_match[s].skip_length());
+	}
+	else {
+	  dna.load_position(start_location);
+	  return;
+	}
       }
       break;
     case pattern_piece::FIND:
@@ -606,9 +616,44 @@ void test_dna_string() {
   std::cout << "Tests all passed" << '\n' << '\n';
 }
 
+void test_iteration() {
+  /*
+    150 ‘IIPIPICPIICICIIFICCIFPPIICCFPC’ turns into ‘PICFC’ 
+    151 ‘IIPIPICPIICICIIFICCIFCCCPPIICCFPC’ turns into ‘PIICCFCFFPC’ 
+    152 ‘IIPIPIICPIICIICCIICFCFC’ turns into ‘I’
+   */
+  char * one = "IIPIPICPIICICIIFICCIFPPIICCFPC";
+  char * two = "IIPIPICPIICICIIFICCIFCCCPPIICCFPC";
+  char * three = "IIPIPIICPIICIICCIICFCFC";
+  dna_string ds_one;
+  dna_string ds_two;
+  dna_string ds_three;
+  dna_string rna;
+  ds_one.push_back(ends(one,one + strlen(one)));
+  ds_two.push_back(ends(two,two + strlen(two)));
+  ds_three.push_back(ends(three,three + strlen(three)));
+  dna_pattern p,q,r;
+  pattern(ds_one, rna, p);
+  display(p);
+  boost::shared_ptr<dna_template> t = make_template(ds_one, rna);
+  display(*t);
+  match_replace(ds_one, p, *t);
+  pattern(ds_two, rna, q);
+  display(q);
+  boost::shared_ptr<dna_template> u = make_template(ds_two, rna);
+  display(*u);
+  match_replace(ds_two, q, *u);
+  pattern(ds_three, rna, r);
+  display(r);
+  boost::shared_ptr<dna_template> v = make_template(ds_three, rna);
+  display(*v);
+  match_replace(ds_three, r, *v);
+}
+
 void alt_main(dna_string dna)
 {
   test_dna_string();
+  test_iteration();
   dna_string rna;
   for (size_t i(0); i < 100; ++i) {
     std::cout << "Iteration " << i << " dna string is this long: " << dna.remaining_length() << '\n';
