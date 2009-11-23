@@ -152,8 +152,7 @@ string template_piece::to_s() {
     }
   case DNA_STRING:
     {
-      //FIXME dangerous
-      return string((*ends_).first);
+      return ends_->to_s();
     }
   }
   throw ("sigh");
@@ -194,16 +193,34 @@ private:
     if (!flushable)
       return;
     //FIXME this isn't terrifically efficient.
+    flushable = false;
     string to_char_shortly = ss_.str();
     size_t dna_string_length = to_char_shortly.length();
     char * almost_there = new char[dna_string_length];
     memcpy(almost_there, to_char_shortly.c_str(), dna_string_length);
-    under_construction_->push_back(template_piece(ends(almost_there, almost_there + (dna_string_length - 1))));
+    under_construction_->push_back(template_piece(ends(almost_there, almost_there + (dna_string_length - 1), 0)));
+    ss_.str("");
   }
   std::stringstream ss_;
   boost::shared_ptr<dna_template> under_construction_;
 };
 
+/*
+
+ICPIFICPP
+
+I->C
+C->F
+F->P
+P->IC
+
+1: CFICCPCFICIC
+2. FPCFFICFPCFCF
+
+CFICC
+
+
+ */
 
 namespace {
 
@@ -219,6 +236,11 @@ namespace {
 }
 
 unsigned int nrcinty_nat(dna_string & dna) {
+  //quick return if we're at a P
+  if (dna.get()=='P') {
+    ++dna;
+    return 0;
+  }
   char const  * start = dna.get_char_ptr();
   dna.skip_to_first('P');
   ++dna; //want the char after P
@@ -407,6 +429,9 @@ void protect(unsigned int const level, dna_string & to_protect)
 {
   if (level==0)
     return; //cheeky early return for the common case.
+  else
+    to_protect.protect(level);
+  return;
   //otherwise, fail - we'll have to allocate, and do some work
   //equally, I want to see if this ever actually gets called
   std::cerr << "Not implemented yet!" << '\n';
@@ -464,7 +489,7 @@ void replace(dna_string & dna, std::deque<dna_string> & env, dna_template & to_r
 	char * to_append = new char[max_length];
 	char * beginning = to_append;
 	asnat(env[n].remaining_length(), to_append);
-	ends some_ends(beginning, to_append);
+	ends some_ends(beginning, to_append, 0);
       	r.push_back(some_ends);
       }
       break;
@@ -490,7 +515,7 @@ void match_replace(dna_string & dna, dna_pattern & to_match, dna_template & to_r
     case pattern_piece::SKIP:
       {
 	unsigned int skip_length = to_match[s].skip_length();
-	if (dna.remaining_length() > skip_length) {
+	if (dna.remaining_length() >= skip_length) { //we're allowed to be at the end of dna with no more chars
 	  dna += (to_match[s].skip_length());
 	}
 	else {
@@ -536,8 +561,8 @@ void match_replace(dna_string & dna, dna_pattern & to_match, dna_template & to_r
 
 void test_dna_string_remaining_length() {
   char const * ten = "0123456789";
-  ends eight(ten, ten+7); //this is EIGHT chars
-  ends two(ten+8,ten+9); //this is TWO chars
+  ends eight(ten, ten+7, 0); //this is EIGHT chars
+  ends two(ten+8,ten+9, 0); //this is TWO chars
   dna_string to_test;
   to_test.push_back(eight);
   assert(to_test.remaining_length()==8);
@@ -552,7 +577,7 @@ void test_dna_string_remaining_length() {
 
 void test_dna_string_push_to_and_get() {
   char const * moo = "IFPIIPFIFPCIFPIPCCIFPICIPIFPIP";
-  ends const allinone(moo, moo+29);
+  ends const allinone(moo, moo+29, 0);
   dna_string to_test,rna;
   to_test.push_back(allinone);
   to_test.push_to(rna, 8);
@@ -574,9 +599,9 @@ void test_dna_substr_from() {
   char const * twelve = "012345678912";
   char const * one = "A";
   char const * twenty = "BCDEFGHIJKLMNOPQRSTU";
-  ends uno(twelve, twelve+11);
-  ends dos(one, one);
-  ends treise(twenty, twenty+19);
+  ends uno(twelve, twelve+11, 0);
+  ends dos(one, one, 0);
+  ends treise(twenty, twenty+19, 0);
   dna_string dna;
   dna.push_back(uno);
   dna.push_back(dos);
@@ -594,12 +619,12 @@ void test_dna_substr_from() {
 void test_dna_string_search() {
   dna_string dna;
   char const * moo = "01AC45RA89ACRANAC";
-  ends const mookery(moo, moo+16);
+  ends const mookery(moo, moo+16, 0);
   dna.push_back(mookery);
   dna.skip_to_first("ACRA", 4);
   assert(dna.remaining_length()==3);
   char const * moo2 = "RA4726387ACRA122";
-  ends const rookery(moo2, moo2+15);
+  ends const rookery(moo2, moo2+15, 0);
   dna.push_back(rookery);
   dna.skip_to_first("ACRA", 4);
   assert(dna.remaining_length()==14);
@@ -629,25 +654,29 @@ void test_iteration() {
   dna_string ds_two;
   dna_string ds_three;
   dna_string rna;
-  ds_one.push_back(ends(one,one + strlen(one)));
-  ds_two.push_back(ends(two,two + strlen(two)));
-  ds_three.push_back(ends(three,three + strlen(three)));
+  ds_one.push_back(ends(one,one - 1 + strlen(one), 0));
+  ds_two.push_back(ends(two,two - 1 + strlen(two), 0));
+  ds_three.push_back(ends(three,three - 1 + strlen(three), 0));
   dna_pattern p,q,r;
   pattern(ds_one, rna, p);
   display(p);
   boost::shared_ptr<dna_template> t = make_template(ds_one, rna);
   display(*t);
   match_replace(ds_one, p, *t);
+  ds_one.display(std::cerr);
+  assert(ds_one.remaining_length() == 5);
   pattern(ds_two, rna, q);
   display(q);
   boost::shared_ptr<dna_template> u = make_template(ds_two, rna);
   display(*u);
   match_replace(ds_two, q, *u);
+  ds_two.display(std::cerr);
   pattern(ds_three, rna, r);
   display(r);
   boost::shared_ptr<dna_template> v = make_template(ds_three, rna);
   display(*v);
   match_replace(ds_three, r, *v);
+  ds_three.display(std::cerr);
 }
 
 void alt_main(dna_string dna)
@@ -681,7 +710,7 @@ int main(int argc, char* argv[])
   string pattern_holder(""),template_holder(""); 
   char * start_of_dna = primitive_dna;
   char * end_of_dna = primitive_dna + 7523059;
-  ends initial(start_of_dna, end_of_dna);
+  ends initial(start_of_dna, end_of_dna, 0);
   dna_string whole_dna;
   whole_dna.push_back(initial);
   alt_main(whole_dna);

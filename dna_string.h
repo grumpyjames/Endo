@@ -2,22 +2,31 @@
 #define DNA_STRING_H_G
 
 #include <deque>
+#include <iosfwd>
 #include <utility>
 #include <cstring>
+#include <string>
 
 typedef std::pair<size_t, char const *> location;
 
 class ends {
  public:
-  explicit ends(char const * s, char const * e);
+  explicit ends(char const * s, char const * e, int protection_level);
   char const * first;
   char const * second;
+  void display(std::ostream & out) const;
+  int protection_level() { return protection_level_; }
+  void protect(int level) { protection_level_ += level; }
+  std::string to_s() const;
+ private:
+  int protection_level_;
 };
 
 class dna_string {
  public: 
   dna_string();
   dna_string(std::deque<ends> initial_innards);
+  void display(std::ostream & out);
   void operator++() {
     if (current_location_ == innards[current_index_].second)
       current_location_ = innards[++current_index_].first;
@@ -69,11 +78,11 @@ class dna_string {
   }
   void push_to(dna_string & rna, size_t const no_of_chars) {
     if (current_location_+no_of_chars <= innards[current_index_].second) {
-      rna.push_back(ends(current_location_,current_location_+no_of_chars-1));
+      rna.push_back(ends(current_location_,current_location_+no_of_chars-1, innards[current_index_].protection_level()));
       (*this)+=no_of_chars;
     }
     else {
-      rna.push_back(ends(current_location_,innards[current_index_].second));
+      rna.push_back(ends(current_location_,innards[current_index_].second, innards[current_index_].protection_level()));
       size_t chars_done = 1 + innards[current_index_].second - current_location_;
       current_location_ = innards[++current_index_].first;
       push_to(rna, no_of_chars - chars_done);
@@ -86,6 +95,7 @@ class dna_string {
   void append(dna_string const & to_push);
   void prepend(dna_string const & to_prepend);
   void push_ends_back(ends const & to_push);
+  void protect(int level);
   std::deque<ends>::const_iterator begin() const { return innards.begin(); }
   std::deque<ends>::const_iterator end() const { return innards.end(); }
   std::deque<ends>::const_reverse_iterator rbegin() const { return innards.rbegin(); }
@@ -94,11 +104,13 @@ class dna_string {
   void reset() {
     current_index_ = 0;
     current_location_ = innards.front().first;
+    at_end_ = false;
   }
   unsigned int move(unsigned int count);
   std::deque<ends> innards;
   size_t current_index_;
   char const * current_location_;
+  bool at_end_;
 };
 
 #endif
