@@ -104,7 +104,7 @@ namespace {
   // Buffer raw_bases such that we collect them as char_limit length strings at most
   class pattern_buffer {
   public:
-    explicit pattern_buffer(pattern & p) : p_(p) {
+    pattern_buffer() {
       buffer_.reserve(char_limit);
     }
     void push(char c) {
@@ -117,41 +117,43 @@ namespace {
 	flush();
       p_.push_back(fragment);
     }
+    pattern build() {
+      flush();
+      return p_;
+    }
+  private:
     void flush() {
       p_.push_back(make_shared<raw_bases>(buffer_));
       buffer_.clear();
-    }
-  private:
+    }   
     std::string buffer_;
-    pattern & p_;
+    pattern p_;
   };
 
-  pattern_with_dna inner_parse_pattern(pattern & p, dna const & dna, natFn nat) {
+  pattern_with_dna inner_parse_pattern(pattern_buffer & p, dna const & dna, natFn nat) {
     std::string buffer;
-    pattern_buffer pattern_buffer(p);
     for (char c: dna) {
       if (buffer.length() > 0) {
 	buffer += c;
 	if (buffer == "IC") {
-	  pattern_buffer.push('P');
+	  p.push('P');
 	  buffer.clear();
 	} else if (buffer == "IP") {
 	  auto nat_result = nat(dna);
-	  pattern_buffer.push(make_shared<skip>(get<0>(nat_result)));
+	  p.push(make_shared<skip>(get<0>(nat_result)));
 	  return inner_parse_pattern(p, get<1>(nat_result), nat);
 	}
       } else if (c == 'C') {
-	pattern_buffer.push('I');
+	p.push('I');
       } else if (c == 'F') {
-	pattern_buffer.push('C');
+	p.push('C');
       } else if (c == 'P') {
-	pattern_buffer.push('F');
+	p.push('F');
       } else {
 	buffer += c;
       }
     }
-    pattern_buffer.flush();
-    return endo::pattern_with_dna(p, dna);
+    return endo::pattern_with_dna(p.build(), dna);
   }
 
   std::string repeat(std::string const & base, size_t const repetitions) {
@@ -169,8 +171,8 @@ namespace {
 }
 
 endo::pattern_with_dna endo::parse_pattern(endo::dna const & dna, endo::natFn nat) {
-  pattern result;  
-  return inner_parse_pattern(result, dna, nat);
+  pattern_buffer builder;  
+  return inner_parse_pattern(builder, dna, nat);
 }
 
 
