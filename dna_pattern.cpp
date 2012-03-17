@@ -77,12 +77,6 @@ namespace {
     return result;
   }
 
-  void check_equal(string const & expected_pattern, pattern const & p) {
-    string const pattern_as_string(make_string(p));
-    if (expected_pattern != pattern_as_string)
-      throw std::runtime_error(expected_pattern + " was not equal to " + pattern_as_string);
-  }
-
   void push(pattern & p, std::string const & c) {
     
   }
@@ -168,6 +162,16 @@ namespace {
       throw std::runtime_error("p has size " + std::to_string(p.size())
 			       + " but was supposed to have size " + std::to_string(expected_size));
   }
+
+  void check_equal(string const & expected, string const & actual) {
+    if (expected != actual)
+      throw std::runtime_error(expected + " was not equal to " + actual);
+  }
+
+  void check_equal(string const & expected_pattern, pattern const & p) {
+    string const pattern_as_string(make_string(p));
+    check_equal(expected_pattern, pattern_as_string);
+  }
 }
 
 endo::pattern_with_dna endo::parse_pattern(endo::dna const & dna, endo::natFn nat) {
@@ -183,9 +187,14 @@ int main(int argc, char * argv[]) {
   check_equal("IC!4", get<0>(parse_pattern(dna("CFIP"), fake_nat)));
   check_equal("IC!4ICFP", get<0>(parse_pattern(dna("CFIP"), another_fake_nat)));
   
+  
   auto result = get<0>(parse_pattern(dna(repeat("CFPIC", 17)), another_fake_nat));
   check_equal(repeat("ICFP", 17), result);
   check_length(result, 2);
+
+  auto result_with_leftover = parse_pattern(dna("CFPICIICCFPI"), fake_nat);
+  check_equal("ICFP", get<0>(result_with_leftover));
+  check_equal("CFPI", get<1>(result_with_leftover));
 
   std::cout << "All tests passed" << std::endl;
 }

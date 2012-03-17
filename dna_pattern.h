@@ -1,3 +1,6 @@
+#ifndef ENDO_DNA_PATTERN_H
+#define ENDO_DNA_PATTERN_H
+
 #include <functional>
 #include <list>
 #include <memory>
@@ -25,3 +28,5 @@ namespace endo {
 
   pattern_with_dna parse_pattern(dna const & d, natFn nat);
 }
+
+#endif
