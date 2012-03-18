@@ -32,7 +32,7 @@ namespace {
   private:
     typedef std::list<std::shared_ptr<chunk> > chunk_list;
   public:
-    chunked_string(std::string const & str) {
+    chunked_string(std::string const & str) : location_index_(0) {
       size_t const index_after_full_chunks = add_full_chunks(str);
       if (index_after_full_chunks != str.size()) {
 	add_final_chunk(str, index_after_full_chunks);
@@ -63,9 +63,7 @@ namespace {
     }
 
     char next() const {
-      if (current_chunk_.length_ > location_index_)
-	return current_chunk_.content_[location_index_++];
-      load_next_chunk();      
+      // obvious danger here if not called in sync with hasNext
       return current_chunk_.content_[location_index_++];
     }
 
@@ -133,24 +131,29 @@ namespace {
   }
 
   void run_iteration_test() {
-    std::string long_string(500000000, '!');
-    for (size_t s = 0; s < 1; ++s) {
-      size_t unknown_char_count(0);
-      chunked_string const chunks(long_string);
-      size_t current_index(0);
-      time_t start = time(NULL);
-      while (chunks.hasNext()) {
-	char const c(chunks.next());
-	if (c != '!') {
-	  std::cout << "unknown char " << c << " at index " << current_index << std::endl;
-	  ++unknown_char_count;	
-	}
-	++current_index;
-      }
-      time_t end = time(NULL);
-      std::cout << "there were " << unknown_char_count << " unknown chars" << std::endl;
-      std::cout << "iteration took " << end - start << " seconds" << std::endl;
-    }    
+    char const bang('!');
+    std::string long_string(500000000, bang);
+    chunked_string const chunks(long_string);
+
+    time_t start = time(NULL);
+    while (chunks.hasNext()) {
+      char const c(chunks.next());
+      if (c != bang)
+	throw std::runtime_error("unexpected char!");
+    }
+    time_t end = time(NULL);
+    std::cout << "iteration took " << end - start << " seconds" << std::endl;
+  }
+
+  void run_small_iter_test() {
+    std::string short_string("The quick brown fox jumped over the lazy dog gate, with his mate geoff, and then they went to the pub and drank copious amounts of booze\n");
+    chunked_string const chunks(short_string);
+    std::string buffer;
+    while (chunks.hasNext()) {
+      buffer.append(1, chunks.next());
+    }
+    if (buffer != short_string)
+      throw std::runtime_error(buffer + " was not equal to " + short_string);
   }
 }
 
@@ -170,5 +173,6 @@ int main(int argc, char * argv[]) {
   std::cout << sizeof(chunked_string) << std::endl;
 
   run_tests();
+  run_small_iter_test();
   run_iteration_test();
 }
